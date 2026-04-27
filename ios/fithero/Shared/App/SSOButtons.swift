@@ -7,18 +7,21 @@ struct SignInWithAppleButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: FH.Spacing.md) {
-                Image(systemName: "apple.logo")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.black)
+            HStack {
+                Spacer()
 
-                Text("Continue with Apple")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(.black)
+                HStack(spacing: FH.Spacing.md) {
+                    Image(systemName: "apple.logo")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.black)
+
+                    Text("Continue with Apple")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(.black)
+                }
 
                 Spacer()
             }
-            .padding(.horizontal, FH.Spacing.md)
             .frame(height: 44)
             .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -34,17 +37,20 @@ struct SignInWithGoogleButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: FH.Spacing.md) {
-                GoogleGLogo()
-                    .frame(width: 18, height: 18)
+            HStack {
+                Spacer()
 
-                Text("Sign in with Google")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(Color(hex: 0x3C4043))
+                HStack(spacing: FH.Spacing.md) {
+                    GoogleGLogo()
+                        .frame(width: 18, height: 18)
+
+                    Text("Sign in with Google")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Color(hex: 0x3C4043))
+                }
 
                 Spacer()
             }
-            .padding(.horizontal, FH.Spacing.md)
             .frame(height: 44)
             .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 8))
