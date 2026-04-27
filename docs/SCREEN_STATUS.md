@@ -22,7 +22,7 @@
 | C-M-05 | **Workout Read View** | ✅ | ✅ | `WorkoutReadView.swift` | `WorkoutReadScreen.kt` | Exercise list, progress bar, stat pills, Done/Next/Upcoming chips. |
 | C-M-06 | **Active Workout Mode** | ✅ | ✅ | `ActiveWorkoutView.swift` | `ActiveWorkoutScreen.kt` | Set table, weight/reps steppers, rest timer with circular countdown, skip/adjust. |
 | C-M-07 | **Workout Summary** | ✅ | ✅ | `WorkoutSummaryView.swift` | `WorkoutSummaryScreen.kt` | Completion hero, stats grid, RPE 1–10 selector, session note, Send to coach / Done. |
-| C-M-08 | **Progress** | ✅ | ✅ | `ClientProgressView.swift` | `ProgressScreen.kt` | 4 tabs: Weight (chart+log), PRs, Body, Photos. |
+| C-M-08 | **Progress** | ✅ | ✅ | `ClientProgressView.swift` | `ProgressScreen.kt` | 5 tabs: Weight (chart+log), PRs, Body, Photos, Check-Ins. |
 | C-M-09 | **Schedule** | ✅ | ✅ | `ScheduleView.swift` | `ScheduleScreen.kt` | Session cards, detail sheet, reschedule sheet with duration chips. |
 | C-M-10 | **Messages** | ✅ | ✅ | `MessagesView.swift` | `MessagesScreen.kt` | Chat bubbles, input bar. Send/attach are stubs on both. |
 | C-M-11 | **Payments** | ✅ | ❌ | `PaymentsView.swift` | — | Active plan card, payment method row, payment history list. Reached from Profile → Billing. |

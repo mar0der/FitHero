@@ -4,6 +4,7 @@ import Charts
 struct ClientProgressView: View {
     @State private var selectedTab = 0
     @State private var showAddPhoto = false
+    @State private var showSubmitCheckIn = false
     let weightHistory = SampleData.weightHistory
     let personalRecords = SampleData.personalRecords
     let progressPhotos = SampleData.progressPhotos
@@ -19,6 +20,7 @@ struct ClientProgressView: View {
                     case 1: prsSection
                     case 2: measurementsSection
                     case 3: photosSection
+                    case 4: checkInsSection
                     default: EmptyView()
                     }
                 }
@@ -63,7 +65,7 @@ struct ClientProgressView: View {
 
     private var segmentedControl: some View {
         HStack(spacing: FH.Spacing.sm) {
-            ForEach(Array(["Weight", "PRs", "Body", "Photos"].enumerated()), id: \.offset) { index, title in
+            ForEach(Array(["Weight", "PRs", "Body", "Photos", "Check-Ins"].enumerated()), id: \.offset) { index, title in
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedTab = index
@@ -396,6 +398,173 @@ struct ClientProgressView: View {
                 .monospacedDigit()
         }
         .fhCard()
+    }
+
+    // MARK: - Check-Ins Section
+
+    private var checkInsSection: some View {
+        VStack(spacing: FH.Spacing.xl) {
+            // Week header
+            HStack(spacing: FH.Spacing.md) {
+                weekColumn(label: "Previous", week: "Week 7", date: "Mar 24")
+                Divider().background(FH.Colors.border)
+                weekColumn(label: "Current", week: "Week 8", date: "Mar 31", isCurrent: true)
+            }
+            .fhCard()
+
+            // Weight comparison
+            VStack(alignment: .leading, spacing: FH.Spacing.md) {
+                Text("WEIGHT")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(FH.Colors.textSubtle)
+                    .tracking(1.2)
+
+                HStack(spacing: FH.Spacing.md) {
+                    checkInValueColumn(value: "80.2", unit: "kg", label: "Previous")
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(FH.Colors.textSubtle)
+                    Spacer()
+                    checkInValueColumn(value: "79.8", unit: "kg", label: "Current", highlight: true)
+                }
+
+                HStack(spacing: FH.Spacing.sm) {
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(FH.Colors.success)
+                    Text("0.4 kg")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(FH.Colors.success)
+                    Text("— on track for your goal")
+                        .font(.system(size: 14))
+                        .foregroundStyle(FH.Colors.textMuted)
+                }
+            }
+            .fhCard()
+
+            // Measurements comparison
+            VStack(alignment: .leading, spacing: FH.Spacing.md) {
+                Text("MEASUREMENTS")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(FH.Colors.textSubtle)
+                    .tracking(1.2)
+
+                VStack(spacing: FH.Spacing.sm) {
+                    checkInMeasurementRow(name: "Chest", prev: "99.2", curr: "98.5", unit: "cm", lowerIsBetter: true)
+                    checkInMeasurementRow(name: "Waist", prev: "84.5", curr: "82.0", unit: "cm", lowerIsBetter: true)
+                    checkInMeasurementRow(name: "Hips", prev: "96.8", curr: "96.0", unit: "cm", lowerIsBetter: true)
+                    checkInMeasurementRow(name: "Left Arm", prev: "35.8", curr: "36.5", unit: "cm", lowerIsBetter: false)
+                    checkInMeasurementRow(name: "Right Arm", prev: "36.2", curr: "37.0", unit: "cm", lowerIsBetter: false)
+                    checkInMeasurementRow(name: "Left Thigh", prev: "57.5", curr: "58.0", unit: "cm", lowerIsBetter: false)
+                    checkInMeasurementRow(name: "Right Thigh", prev: "57.8", curr: "58.5", unit: "cm", lowerIsBetter: false)
+                }
+            }
+            .fhCard()
+
+            // Photos comparison
+            VStack(alignment: .leading, spacing: FH.Spacing.md) {
+                Text("PHOTOS")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(FH.Colors.textSubtle)
+                    .tracking(1.2)
+
+                HStack(spacing: FH.Spacing.md) {
+                    photoPlaceholder(label: "Week 7", date: Calendar.current.date(byAdding: .day, value: -7, to: Date()), icon: "camera", color: FH.Colors.textSubtle)
+                    photoPlaceholder(label: "Week 8", date: Date(), icon: "camera.fill", color: FH.Colors.primary)
+                }
+            }
+            .fhCard()
+
+            // Submit CTA
+            Button {
+                showSubmitCheckIn = true
+            } label: {
+                Text("Submit Check-In")
+            }
+            .buttonStyle(FHPrimaryButtonStyle())
+            .padding(.top, FH.Spacing.md)
+        }
+        .alert("Check-In Submitted", isPresented: $showSubmitCheckIn) {
+            Button("Great!", role: .cancel) { }
+        } message: {
+            Text("Your coach will review your progress and get back to you.")
+        }
+    }
+
+    private func weekColumn(label: String, week: String, date: String, isCurrent: Bool = false) -> some View {
+        VStack(spacing: FH.Spacing.sm) {
+            Text(label)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(isCurrent ? FH.Colors.primary : FH.Colors.textSubtle)
+                .tracking(1)
+            Text(week)
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(FH.Colors.text)
+            Text(date)
+                .font(.system(size: 13))
+                .foregroundStyle(FH.Colors.textMuted)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func checkInValueColumn(value: String, unit: String, label: String, highlight: Bool = false) -> some View {
+        VStack(spacing: FH.Spacing.xs) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(highlight ? FH.Colors.primary : FH.Colors.text)
+                    .monospacedDigit()
+                Text(unit)
+                    .font(.system(size: 13))
+                    .foregroundStyle(FH.Colors.textMuted)
+            }
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundStyle(FH.Colors.textSubtle)
+        }
+    }
+
+    private func checkInMeasurementRow(name: String, prev: String, curr: String, unit: String, lowerIsBetter: Bool) -> some View {
+        let previous = Double(prev) ?? 0
+        let current = Double(curr) ?? 0
+        let diff = current - previous
+        let diffStr = String(format: "%+.1f", diff)
+
+        let isImprovement: Bool = lowerIsBetter ? diff < 0 : diff > 0
+        let deltaColor: Color = diff == 0 ? FH.Colors.textSubtle : (isImprovement ? FH.Colors.success : FH.Colors.danger)
+        let arrow = diff < 0 ? "arrow.down" : (diff > 0 ? "arrow.up" : "minus")
+
+        return HStack {
+            Text(name)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(FH.Colors.text)
+                .frame(width: 80, alignment: .leading)
+
+            Spacer()
+
+            Text("\(prev) → \(curr) \(unit)")
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(FH.Colors.text)
+                .monospacedDigit()
+
+            HStack(spacing: 2) {
+                Image(systemName: arrow)
+                    .font(.system(size: 10, weight: .bold))
+                Text(diffStr)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(deltaColor)
+            .frame(width: 60, alignment: .trailing)
+            .monospacedDigit()
+        }
+        .padding(FH.Spacing.md)
+        .background(FH.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: FH.Radius.lg)
+                .stroke(FH.Colors.border, lineWidth: 1)
+        )
     }
 }
 

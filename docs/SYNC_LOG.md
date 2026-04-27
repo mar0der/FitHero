@@ -19,6 +19,13 @@
 
 ## Log
 
+### 2026-04-28 — [ios] Progress: add Check-Ins tab (C-M-08)
+- **Screen:** Client Progress (C-M-08)
+- **iOS Change:** Added 5th "Check-Ins" tab to `ClientProgressView`. Side-by-side layout: Previous Week vs Current Week. Sections: Weight (with delta arrow + trend text), Measurements (7 rows with prev→curr deltas, green=improvement/red=opposite), Photos (before/after placeholders), Submit Check-In CTA with confirmation alert.
+- **Android Status:** ❌ N/A (iOS only session)
+- **Files touched:** `ios/Client/Views/ClientProgressView.swift`
+- **Notes:** Delta direction is trainer-defined per measurement site (lowerIsBetter flag). All data is sample/hardcoded for prototype.
+
 ### 2026-04-28 — [ios] Payments: C-M-03 + C-M-11
 - **Screen:** Payments (C-M-11), Add Payment Method (C-M-03)
 - **iOS Change:** Built `PaymentsView` with active plan card, payment method row, and payment history list. Built `AddPaymentMethodView` as a sheet with card preview, brand picker, card number/expiry/CVC fields, save and skip buttons. Added `PaymentMethod`, `PaymentHistoryItem`, `SubscriptionPlan` models with `@AppStorage` persistence. Added "Payments & Plans" row to `ProfileSheet`.
