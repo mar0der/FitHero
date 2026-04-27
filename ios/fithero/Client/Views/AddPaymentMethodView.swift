@@ -108,16 +108,29 @@ struct AddPaymentMethodView: View {
 
     private var formattedCardNumber: String {
         let digits = cardNumber.filter { $0.isNumber }
+        guard !digits.isEmpty else {
+            return "•••• •••• •••• ••••"
+        }
         var result = ""
         for (index, char) in digits.enumerated() {
             if index > 0 && index % 4 == 0 {
                 result += " "
             }
-            result.append(char)
+            if index < 4 {
+                result.append(char)
+            } else {
+                result.append("•")
+            }
         }
-        let padding = 19 - result.count
-        if padding > 0 {
-            result += String(repeating: "•", count: padding)
+        // Pad remaining groups
+        let totalGroups = 4
+        let currentGroups = (result.count + 3) / 4
+        let remainingGroups = totalGroups - currentGroups
+        if remainingGroups > 0 {
+            for g in 0..<remainingGroups {
+                if !result.isEmpty { result += " " }
+                result += "••••"
+            }
         }
         return result
     }
