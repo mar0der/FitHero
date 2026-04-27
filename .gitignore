@@ -28,3 +28,8 @@ node_modules/
 
 # Old git backup
 .git-backup-ios/
+
+# Xcode user data
+ios/fithero.xcodeproj/project.xcworkspace/xcuserdata/
+ios/fithero.xcodeproj/xcuserdata/
+
