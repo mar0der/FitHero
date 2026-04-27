@@ -1,20 +1,25 @@
 import SwiftUI
 
 struct ClientOnboardingView: View {
-    @State private var step: OnboardingStep = .welcome
+    var onComplete: () -> Void = {}
+
+    @State private var step: OnboardingStep = .basics
     @State private var data = OnboardingData()
     @State private var direction: SlideDirection = .forward
     @Environment(\.dismiss) private var dismiss
 
-    private let trainer = SampleData.onboardingTrainer
-    private let totalSteps = 6 // excluding welcome and complete
+    private let totalSteps = 5 // excluding complete
+
+    init(onComplete: @escaping () -> Void = {}) {
+        self.onComplete = onComplete
+    }
 
     var body: some View {
         ZStack {
             FH.Colors.bg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                if step != .welcome && step != .complete {
+                if step != .complete {
                     progressHeader
                 }
 
@@ -61,7 +66,6 @@ struct ClientOnboardingView: View {
     private var contentStack: some View {
         Group {
             switch step {
-            case .welcome: welcomeStep
             case .basics: basicsStep
             case .goals: goalsStep
             case .injuries: injuriesStep
@@ -136,69 +140,7 @@ struct ClientOnboardingView: View {
         }
     }
 
-    // MARK: - Step 1: Welcome
-
-    private var welcomeStep: some View {
-        VStack(spacing: FH.Spacing.xxl) {
-            Spacer()
-
-            VStack(spacing: FH.Spacing.xl) {
-                ZStack {
-                    Circle()
-                        .fill(FH.Colors.primary.opacity(0.15))
-                        .frame(width: 100, height: 100)
-                    Text(trainer.photoInitial)
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(FH.Colors.primary)
-                }
-
-                VStack(spacing: FH.Spacing.sm) {
-                    Text("\(trainer.name) invited you")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(FH.Colors.text)
-                        .multilineTextAlignment(.center)
-
-                    Text("to train together on FitHero")
-                        .font(.system(size: 18))
-                        .foregroundStyle(FH.Colors.textMuted)
-                        .multilineTextAlignment(.center)
-                }
-
-                Text(trainer.inviteMessage)
-                    .font(.system(size: 15))
-                    .foregroundStyle(FH.Colors.textMuted)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, FH.Spacing.xl)
-            }
-
-            Spacer()
-
-            VStack(spacing: FH.Spacing.md) {
-                Button {
-                    direction = .forward
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        step = .basics
-                    }
-                } label: {
-                    Text("Get Started")
-                }
-                .buttonStyle(FHPrimaryButtonStyle())
-
-                Button {
-                    // Already have account
-                } label: {
-                    Text("I already have an account")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(FH.Colors.textMuted)
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.bottom, FH.Spacing.xl)
-        }
-    }
-
-    // MARK: - Step 2: Basics
+    // MARK: - Step 1: Basics
 
     private var basicsStep: some View {
         ScrollView(showsIndicators: false) {
@@ -228,7 +170,7 @@ struct ClientOnboardingView: View {
         }
     }
 
-    // MARK: - Step 3: Goals
+    // MARK: - Step 2: Goals
 
     private var goalsStep: some View {
         ScrollView(showsIndicators: false) {
@@ -279,7 +221,7 @@ struct ClientOnboardingView: View {
         }
     }
 
-    // MARK: - Step 4: Injuries
+    // MARK: - Step 3: Injuries
 
     private var injuriesStep: some View {
         ScrollView(showsIndicators: false) {
@@ -356,7 +298,7 @@ struct ClientOnboardingView: View {
         )
     }
 
-    // MARK: - Step 5: Experience
+    // MARK: - Step 4: Experience
 
     private var experienceStep: some View {
         ScrollView(showsIndicators: false) {
@@ -397,7 +339,7 @@ struct ClientOnboardingView: View {
         }
     }
 
-    // MARK: - Step 6: Measurements
+    // MARK: - Step 5: Measurements
 
     private var measurementsStep: some View {
         ScrollView(showsIndicators: false) {
@@ -468,7 +410,7 @@ struct ClientOnboardingView: View {
         }
     }
 
-    // MARK: - Step 7: Complete
+    // MARK: - Step 6: Complete
 
     private var completeStep: some View {
         VStack(spacing: FH.Spacing.xxl) {
@@ -502,7 +444,7 @@ struct ClientOnboardingView: View {
             Spacer()
 
             Button {
-                dismiss()
+                onComplete()
             } label: {
                 Text("Go to Dashboard")
             }
@@ -564,23 +506,21 @@ struct ClientOnboardingView: View {
 // MARK: - Step Enum
 
 private enum OnboardingStep {
-    case welcome, basics, goals, injuries, experience, measurements, complete
+    case basics, goals, injuries, experience, measurements, complete
 
     var progressIndex: Int {
         switch self {
-        case .welcome: return 0
         case .basics: return 1
         case .goals: return 2
         case .injuries: return 3
         case .experience: return 4
         case .measurements: return 5
-        case .complete: return 6
+        case .complete: return 5
         }
     }
 
     var title: String {
         switch self {
-        case .welcome: return "Welcome"
         case .basics: return "Basics"
         case .goals: return "Goals"
         case .injuries: return "Injuries"
@@ -592,7 +532,6 @@ private enum OnboardingStep {
 
     var next: OnboardingStep {
         switch self {
-        case .welcome: return .basics
         case .basics: return .goals
         case .goals: return .injuries
         case .injuries: return .experience
@@ -604,8 +543,7 @@ private enum OnboardingStep {
 
     var previous: OnboardingStep {
         switch self {
-        case .welcome: return .welcome
-        case .basics: return .welcome
+        case .basics: return .basics
         case .goals: return .basics
         case .injuries: return .goals
         case .experience: return .injuries
@@ -616,7 +554,7 @@ private enum OnboardingStep {
 
     var canGoBack: Bool {
         switch self {
-        case .welcome, .complete: return false
+        case .basics, .complete: return false
         default: return true
         }
     }

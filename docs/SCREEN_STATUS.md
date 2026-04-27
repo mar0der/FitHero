@@ -15,8 +15,8 @@
 
 | ID | Screen | iOS Status | Android Status | iOS File | Android File | Notes |
 |----|--------|-----------|----------------|----------|--------------|-------|
-| C-M-01 | **Invite Landing / Sign Up** | ❌ | ❌ | — | — | Auth flow. Not started. |
-| C-M-02 | **Onboarding Intake** | ❌ | ❌ | — | — | 5-step form. Not started. |
+| C-M-01 | **Invite Landing / Sign Up** | ✅ | ❌ | `ClientAuthView.swift` | — | Trainer invite landing, invite code field, email/password, Apple/Google SSO stubs, sign-in/sign-up toggle. Reached via `AuthEntryView`. |
+| C-M-02 | **Onboarding Intake** | ✅ | ❌ | `ClientOnboardingView.swift` | — | 5-step form (basics, goals, injuries, experience, measurements). Integrated into client auth flow. |
 | C-M-03 | **Add Payment Method** | ❌ | ❌ | — | — | Stripe. Not started. |
 | C-M-04 | **Home** | ✅ | ✅ | `ClientHomeView.swift` | `HomeScreen.kt` | Dynamic greeting, workout pills, activity dots, message preview, avatar → Profile sheet. |
 | C-M-05 | **Workout Read View** | ✅ | ✅ | `WorkoutReadView.swift` | `WorkoutReadScreen.kt` | Exercise list, progress bar, stat pills, Done/Next/Upcoming chips. |
@@ -40,7 +40,7 @@
 
 | ID | Screen | iOS Status | Android Status | iOS File | Android File | Notes |
 |----|--------|-----------|----------------|----------|--------------|-------|
-| T-M-01 | **Sign In** | ❌ | ❌ | — | — | Not started. |
+| T-M-01 | **Sign In / Sign Up** | ✅ | ❌ | `TrainerAuthView.swift` | — | Trainer auth with sign-in and sign-up modes. Name, business, email, password fields. |
 | T-M-02 | **Today** | ✅ | ✅ | `TodayView.swift` | `TrainerTodayScreen.kt` | Sessions list, stats, notifications sheet. |
 | T-M-03 | **Clients** | ✅ | ✅ | `ClientsView.swift` | `TrainerClientsScreen.kt` | Search, filter pills, client rows with status. |
 | T-M-04 | **Client Mini-Profile** | ✅ | ✅ | `ClientDetailView.swift` | `ClientDetailScreen.kt` | Tap client row → detail. 4 tabs: Overview, Programs, Progress, Notes. |
@@ -82,10 +82,10 @@
 
 | Surface | Screens | iOS ✅ | Android ✅ | ❌ Both | 🚫 |
 |---------|---------|--------|-----------|---------|-----|
-| Client Mobile | 12 | 8 | 8 | 3 | 1 |
-| Trainer Mobile | 7 | 6 | 6 | 1 | 1 |
+| Client Mobile | 12 | 10 | 8 | 1 | 1 |
+| Trainer Mobile | 7 | 7 | 6 | 0 | 1 |
 | Trainer Web | 16 | 0 | 0 | 16 | 0 |
-| **TOTAL** | **35** | **14** | **14** | **19** | **2** |
+| **TOTAL** | **35** | **17** | **14** | **16** | **2** |
 
 ---
 

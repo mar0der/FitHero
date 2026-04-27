@@ -7,6 +7,7 @@ enum AppRole: String {
 
 struct AppRootView: View {
     @AppStorage("selectedAppRole") private var selectedRoleRawValue = ""
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     private var selectedRole: AppRole? {
         get { AppRole(rawValue: selectedRoleRawValue) }
@@ -18,69 +19,26 @@ struct AppRootView: View {
             Group {
                 switch selectedRole {
                 case .trainer:
-                    TrainerRootView(onSignOut: { selectedRoleRawValue = "" })
+                    TrainerRootView(onSignOut: signOut)
                 case .client:
-                    ClientRootView(onSignOut: { selectedRoleRawValue = "" })
+                    if hasCompletedOnboarding {
+                        ClientRootView(onSignOut: signOut)
+                    } else {
+                        ClientOnboardingView {
+                            hasCompletedOnboarding = true
+                        }
+                    }
                 case nil:
-                    RoleSelectionView(
-                        onSelectTrainer: { selectedRoleRawValue = AppRole.trainer.rawValue },
-                        onSelectClient: { selectedRoleRawValue = AppRole.client.rawValue }
-                    )
+                    NavigationStack {
+                        AuthLandingView()
+                    }
                 }
             }
         }
     }
-}
 
-private struct RoleSelectionView: View {
-    let onSelectTrainer: () -> Void
-    let onSelectClient: () -> Void
-
-    var body: some View {
-        ZStack {
-            FH.Colors.bg.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                Spacer()
-
-                // Mark
-                VStack(spacing: FH.Spacing.base) {
-                    RoundedRectangle(cornerRadius: FH.Radius.lg)
-                        .fill(FH.Colors.primary)
-                        .frame(width: 64, height: 64)
-                        .overlay(
-                            Text("FH")
-                                .font(.system(size: 22, weight: .black))
-                                .foregroundStyle(FH.Colors.primaryInk)
-                        )
-
-                    Text("FitHero")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(FH.Colors.text)
-                        .tracking(-1)
-                }
-
-                Spacer()
-
-                // Buttons
-                VStack(spacing: FH.Spacing.sm) {
-                    Button("Trainer", action: onSelectTrainer)
-                        .buttonStyle(FHPrimaryButtonStyle())
-
-                    Button("Hero", action: onSelectClient)
-                        .buttonStyle(FHSecondaryButtonStyle())
-
-                    Text("DEMO · NO AUTH")
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(FH.Colors.textSubtle)
-                        .tracking(1.2)
-                        .padding(.top, FH.Spacing.xs)
-                }
-                .padding(.horizontal, FH.Spacing.xl)
-                .padding(.bottom, 52)
-            }
-        }
-        .preferredColorScheme(.dark)
+    private func signOut() {
+        selectedRoleRawValue = ""
     }
 }
 

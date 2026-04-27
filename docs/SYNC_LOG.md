@@ -19,6 +19,20 @@
 
 ## Log
 
+### 2026-04-28 — [ios] Split auth into three-page flow
+- **Screen:** App entry point (C-M-01, T-M-01)
+- **iOS Change:** Replaced overloaded single-screen auth with a clean three-page flow: `AuthLandingView` ("Sign In" / "Get Started") → `AuthSignInView` (email/password + SSO) or `AuthSignUpOptionsView` ("I was invited" / "I'm a trainer"). Each screen has at most 2 primary actions. Added invite code field to `ClientAuthView`. Added sign-up mode to `TrainerAuthView`.
+- **Android Status:** ❌ N/A (iOS only session)
+- **Files touched:** `ios/Shared/App/AuthLandingView.swift`, `ios/Shared/App/AuthSignInView.swift`, `ios/Shared/App/AuthSignUpOptionsView.swift`, `ios/Shared/App/AppRootView.swift`, `ios/Client/Auth/ClientAuthView.swift`, `ios/Trainer/Auth/TrainerAuthView.swift`
+- **Notes:** Deleted `AuthEntryView.swift` and `AuthGatewayView`. No screen has more than 2 CTAs. `AppRootView` routes by `selectedAppRole` + `hasCompletedOnboarding`.
+
+### 2026-04-28 — [ios] Auth flow: Client Sign Up, Client Onboarding, Trainer Sign In
+- **Screen:** C-M-01, C-M-02, T-M-01
+- **iOS Change:** Built `ClientAuthView` (invite landing + email/password + SSO stubs + sign-in/up toggle). Integrated `ClientOnboardingView` into client app entry with `startAtWelcome` and `onComplete` callbacks. Built `TrainerAuthView` (trainer email/password sign-in). Updated `AppRootView` with auth state routing (`hasCompletedOnboarding`).
+- **Android Status:** ❌ N/A (iOS only session)
+- **Files touched:** `ios/Client/Auth/ClientAuthView.swift`, `ios/Trainer/Auth/TrainerAuthView.swift`, `ios/Shared/App/AppRootView.swift`, `ios/Client/Onboarding/ClientOnboardingView.swift`, `ios/Trainer/Views/ClientsView.swift`
+- **Notes:** Auth is prototype-only using `@AppStorage`. No backend integration yet. Sign Out now returns to auth gateway instead of role picker.
+
 ### 2026-04-27 — [android] Trainer Client Mini-Profile (T-M-04)
 - **Screen:** Trainer Clients → Client Detail (T-M-04)
 - **iOS Change:** `ClientDetailView.swift` already existed with full 4-tab layout (Overview, Programs, Progress, Notes). Tapping a client row navigates to detail.

@@ -46,7 +46,7 @@ struct ClientsView: View {
                 ClientDetailView(client: client)
             }
             .sheet(isPresented: $showClientOnboarding) {
-                ClientOnboardingView()
+                ClientOnboardingView(onComplete: { showClientOnboarding = false })
             }
         }
     }
