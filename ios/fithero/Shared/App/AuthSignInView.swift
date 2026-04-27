@@ -96,12 +96,13 @@ struct AuthSignInView: View {
 
     private var ssoSection: some View {
         VStack(spacing: FH.Spacing.sm) {
-            ssoButton(icon: "apple.logo", title: "Continue with Apple", action: {
+            SignInWithAppleButton {
                 signIn()
-            })
-            ssoButton(icon: "g.circle.fill", title: "Continue with Google", action: {
+            }
+
+            SignInWithGoogleButton {
                 signIn()
-            })
+            }
         }
     }
 
@@ -149,28 +150,7 @@ struct AuthSignInView: View {
         }
     }
 
-    private func ssoButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: FH.Spacing.md) {
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundStyle(FH.Colors.text)
-                Text(title)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(FH.Colors.text)
-                Spacer()
-            }
-            .padding(.horizontal, FH.Spacing.md)
-            .padding(.vertical, FH.Spacing.md)
-            .background(FH.Colors.surface2)
-            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: FH.Radius.md)
-                    .stroke(FH.Colors.border, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
+
 
     private func signIn() {
         // In production: call backend auth, receive role + onboarding status

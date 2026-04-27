@@ -1,11 +1,17 @@
 import SwiftUI
 
 struct AuthLandingView: View {
+    @AppStorage("selectedAppRole") private var selectedRoleRawValue = ""
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     var body: some View {
         ZStack {
             FH.Colors.bg.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                debugButtons
+                    .padding(.top, FH.Spacing.lg)
+
                 Spacer()
 
                 brandSection
@@ -16,6 +22,51 @@ struct AuthLandingView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private var debugButtons: some View {
+        HStack(spacing: FH.Spacing.sm) {
+            Button {
+                selectedRoleRawValue = AppRole.trainer.rawValue
+            } label: {
+                Text("Trainer")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(FH.Colors.textSubtle)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(FH.Colors.surface2)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                selectedRoleRawValue = AppRole.client.rawValue
+                hasCompletedOnboarding = true
+            } label: {
+                Text("Hero")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(FH.Colors.textSubtle)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(FH.Colors.surface2)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                selectedRoleRawValue = AppRole.client.rawValue
+                hasCompletedOnboarding = false
+            } label: {
+                Text("Onboarding")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(FH.Colors.textSubtle)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(FH.Colors.surface2)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var brandSection: some View {
