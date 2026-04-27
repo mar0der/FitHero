@@ -1,0 +1,85 @@
+{
+    "version": "2.0.0",
+    "options": {
+        "env": {
+            "JAVA_HOME": "${env:HOME}/jdk/jdk-17.0.12+7/Contents/Home",
+            "ANDROID_HOME": "${env:HOME}/android-sdk"
+        }
+    },
+    "tasks": [
+        {
+            "label": "Android: Build Debug APK",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": ["assembleDebug"],
+            "options": {
+                "cwd": "${workspaceFolder}/android"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: Install & Run on Emulator",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": ["installDebug"],
+            "options": {
+                "cwd": "${workspaceFolder}/android"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Android: Clean Build",
+            "type": "shell",
+            "command": "./gradlew",
+            "args": ["clean"],
+            "options": {
+                "cwd": "${workspaceFolder}/android"
+            },
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Android: Start Emulator (Pixel 8)",
+            "type": "shell",
+            "command": "open",
+            "args": ["-a", "Terminal", "${env:HOME}/.start-emulator.sh"],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "never"
+            }
+        },
+        {
+            "label": "iOS: Build & Run",
+            "type": "shell",
+            "command": "xcodebuild",
+            "args": [
+                "-project", "ios/fithero.xcodeproj",
+                "-scheme", "fithero",
+                "-destination", "platform=iOS Simulator,name=iPhone Air",
+                "build"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ]
+}
