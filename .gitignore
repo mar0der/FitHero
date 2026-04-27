@@ -1,0 +1,30 @@
+# macOS
+.DS_Store
+
+# Android
+android/app/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/*.iml
+
+# iOS
+ios/build/
+ios/DerivedData/
+ios/.idea/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Backend (empty for now)
+backend/
+
+# Node (deck builder)
+node_modules/
+
+# IDE
+.vscode/settings.local.json
+.claude/
+
+# Old git backup
+.git-backup-ios/

@@ -1,0 +1,132 @@
+# FitHero — Cross-Platform Sync Log
+
+> Append-only. Dated entries. iOS Lead writes what changed; Android Dev marks when cloned.
+
+---
+
+## Format
+
+```markdown
+### 2026-04-21 — [ios|android] What changed
+- **Screen:** Which screen
+- **iOS Change:** What was added/modified/deleted
+- **Android Status:** ⬜ Not cloned | ✅ Cloned | 🟡 Partial | ❌ N/A
+- **Files touched:** `ios/...` → `android/...`
+- **Notes:** Anything the other agent needs to know
+```
+
+---
+
+## Log
+
+### 2026-04-27 — [android] Trainer Client Mini-Profile (T-M-04)
+- **Screen:** Trainer Clients → Client Detail (T-M-04)
+- **iOS Change:** `ClientDetailView.swift` already existed with full 4-tab layout (Overview, Programs, Progress, Notes). Tapping a client row navigates to detail.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../ClientDetailView.swift` → `android/.../ClientDetailScreen.kt`, `TrainerClientsScreen.kt`
+- **Notes:** Android uses a full-screen Box overlay (no Navigation component in project). Row tap shows detail; dismiss button returns to list. Matches iOS data and layout 1:1.
+
+### 2026-04-21 — [ios] Role picker + floating badge + AppRootView structure
+- **Screen:** App entry point (role selection)
+- **iOS Change:** Built `AppRootView` with `AppRole` enum, `@AppStorage` role persistence, `RoleSelectionView` (FH logo + Trainer/Hero buttons), `AppSessionBadge` (top-right role switcher)
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/fithero/Shared/App/AppRootView.swift` → `android/.../FitHeroApp.kt`
+- **Notes:** Badge later removed on both platforms. Sign Out now lives in Profile/Settings.
+
+### 2026-04-21 — [ios] Client Home screen
+- **Screen:** Home (C-M-04)
+- **iOS Change:** Dynamic greeting with name + time of day. Real `workout.exercises` data for pills. `weekActivity` array for dot grid. Message preview from actual `messages.last`. Tap avatar → `ProfileSheet`.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../ClientHomeView.swift` → `android/.../HomeScreen.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Client Workout Flow (Read → Active → Summary)
+- **Screen:** Workout (C-M-05/06/07)
+- **iOS Change:** Full 3-phase flow. `WorkoutReadView` (exercise list, progress, stats). `ActiveWorkoutView` (set table, weight/reps steppers, rest timer with circular countdown). `WorkoutSummaryView` (completion hero, RPE 1–10, session note, stats).
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../WorkoutReadView.swift`, `ActiveWorkoutView.swift`, `WorkoutSummaryView.swift` → `android/.../WorkoutReadScreen.kt`, `ActiveWorkoutScreen.kt`, `WorkoutSummaryScreen.kt`
+- **Notes:** Android uses Compose `Canvas` for rest timer circle. No video demo in Android (hardcoded to bench press on iOS anyway).
+
+### 2026-04-21 — [ios] Client Progress (4 tabs)
+- **Screen:** Progress (C-M-08)
+- **iOS Change:** Segmented control: Weight / PRs / Body / Photos. Weight tab has SwiftUI Charts line chart + log. PRs tab has trophy list. Body tab has measurements with +/- diffs. Photos tab has timeline grid + Add Photo sheet.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../ClientProgressView.swift` → `android/.../ProgressScreen.kt`
+- **Notes:** Android uses custom `Canvas` line chart instead of Charts library.
+
+### 2026-04-21 — [ios] Client Schedule + Detail + Reschedule
+- **Screen:** Schedule (C-M-09)
+- **iOS Change:** Session cards with date column. Tap → `SessionDetailSheet` (info + Add to Calendar / Reschedule actions). Reschedule sheet has date picker + duration chips (15/30/45/60/90).
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../ScheduleView.swift`, `SessionDetailSheet.swift`, `RescheduleSheet.swift` → `android/.../ScheduleScreen.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Client Messages
+- **Screen:** Messages (C-M-10)
+- **iOS Change:** Chat header with trainer avatar + online dot. Message bubbles (trainer left/gray, client right/lime). Input bar with attach + send.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../MessagesView.swift` → `android/.../MessagesScreen.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Client Profile Sheet
+- **Screen:** Profile (C-M-12)
+- **iOS Change:** Avatar header. Editable personal info fields (`@AppStorage`). Notification toggles. Support links. Sign Out button.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../ProfileSheet.swift` → `android/.../ProfileSheet.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Trainer Today view
+- **Screen:** Trainer Today (T-M-02)
+- **iOS Change:** Header with bell + unread badge. Sessions list with type icons. Quick stats (active clients / today / this week). Notifications sheet.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../TodayView.swift`, `NotificationsView.swift` → `android/.../TrainerTodayScreen.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Trainer Clients list
+- **Screen:** Trainer Clients (T-M-03)
+- **iOS Change:** Header with active count + add button. Search bar. Filter pills (All/Active/Pending/Paused). Client rows with avatar initials, plan, status pill, last active.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../ClientsView.swift` → `android/.../TrainerClientsScreen.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Trainer Library
+- **Screen:** Trainer Library
+- **iOS Change:** Segmented control: Exercises / Workouts. Lists with names and details.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../LibraryView.swift` → `android/.../TrainerLibraryScreen.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Trainer Messages (inbox)
+- **Screen:** Trainer Messages (T-M-05)
+- **iOS Change:** Conversation list with unread badges. Name, preview, time.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../TrainerMessagesView.swift` → `android/.../TrainerMessagesScreen.kt`
+- **Notes:** —
+
+### 2026-04-21 — [ios] Trainer Settings
+- **Screen:** Trainer Settings (T-M-07)
+- **iOS Change:** Profile section (Edit, Billing, Branding). Preferences toggles (Push, Email). Support links. Sign Out button.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../TrainerSettingsView.swift` → `android/.../TrainerSettingsScreen.kt`
+- **Notes:** Sign Out on both platforms now returns to role picker. Floating badge removed.
+
+---
+
+## Pending Decisions
+
+> Android agent proposes deviations here. Human approves/rejects.
+
+*None currently.*
+
+---
+
+## Resolved Decisions
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-04-21 | Remove floating role badge | Too high, collided with back nav / Dynamic Island. Sign Out moved to Profile/Settings. |
+| 2026-04-21 | Android charts use Canvas | No external chart dependency. Custom Canvas line chart matches iOS visual. |
+
+---
+
+*Append new entries at the top. Do not delete old entries.*
