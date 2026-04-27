@@ -11,6 +11,8 @@ struct ProfileSheet: View {
     @AppStorage("notifyMessages") private var notifyMessages = true
     @AppStorage("notifyProgress") private var notifyProgress = false
 
+    @State private var showPayments = false
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -20,6 +22,7 @@ struct ProfileSheet: View {
                     VStack(spacing: FH.Spacing.xl) {
                         avatarHeader
                         infoSection
+                        paymentsSection
                         notificationsSection
                         supportSection
                         signOutButton
@@ -38,6 +41,9 @@ struct ProfileSheet: View {
                             .foregroundStyle(FH.Colors.textSubtle)
                     }
                 }
+            }
+            .navigationDestination(isPresented: $showPayments) {
+                PaymentsView()
             }
         }
     }
@@ -115,6 +121,50 @@ struct ProfileSheet: View {
         .padding(FH.Spacing.md)
         .background(FH.Colors.surface)
         .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+    }
+
+    // MARK: - Payments
+
+    private var paymentsSection: some View {
+        VStack(alignment: .leading, spacing: FH.Spacing.md) {
+            Text("BILLING")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(FH.Colors.textSubtle)
+                .tracking(1.2)
+
+            Button {
+                showPayments = true
+            } label: {
+                HStack(spacing: FH.Spacing.md) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: FH.Radius.md)
+                            .fill(FH.Colors.primary.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "creditcard.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(FH.Colors.primary)
+                    }
+
+                    Text("Payments & Plans")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(FH.Colors.text)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundStyle(FH.Colors.textSubtle)
+                }
+                .padding(FH.Spacing.md)
+                .background(FH.Colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: FH.Radius.lg)
+                        .stroke(FH.Colors.border, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: - Notifications

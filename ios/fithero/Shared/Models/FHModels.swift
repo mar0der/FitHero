@@ -216,6 +216,39 @@ struct BodyMeasurements {
     var rightThigh: String = ""
 }
 
+// MARK: - Payment Models
+
+struct PaymentMethod: Identifiable, Codable {
+    var id = UUID()
+    var brand: String // "Visa", "Mastercard", etc.
+    var lastFour: String
+    var expiryMonth: String
+    var expiryYear: String
+}
+
+struct PaymentHistoryItem: Identifiable, Codable {
+    var id = UUID()
+    var date: Date
+    var amount: String
+    var status: PaymentStatus
+    var description: String
+    var receiptId: String?
+
+    enum PaymentStatus: String, Codable {
+        case paid = "Paid"
+        case pending = "Pending"
+        case failed = "Failed"
+    }
+}
+
+struct SubscriptionPlan: Codable {
+    var name: String
+    var amount: String
+    var billingInterval: String // "month", "year"
+    var nextBillingDate: Date
+    var status: String // "Active", "Paused", "Cancelled"
+}
+
 extension SampleData {
     static let exerciseLibrary: [Exercise] = [
         Exercise(name: "Barbell Bench Press", category: "Push", targetSets: 4, targetReps: "8-10", restSeconds: 90, notes: "Controlled eccentric, full ROM", sfSymbol: "figure.strengthtraining.traditional"),

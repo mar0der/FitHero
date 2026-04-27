@@ -17,7 +17,7 @@
 |----|--------|-----------|----------------|----------|--------------|-------|
 | C-M-01 | **Invite Landing / Sign Up** | ✅ | ❌ | `ClientAuthView.swift` | — | Trainer invite landing, invite code field, email/password, Apple/Google SSO stubs, sign-in/sign-up toggle. Reached via `AuthEntryView`. |
 | C-M-02 | **Onboarding Intake** | ✅ | ❌ | `ClientOnboardingView.swift` | — | 5-step form (basics, goals, injuries, experience, measurements). Integrated into client auth flow. |
-| C-M-03 | **Add Payment Method** | ❌ | ❌ | — | — | Stripe. Not started. |
+| C-M-03 | **Add Payment Method** | ✅ | ❌ | `AddPaymentMethodView.swift` | — | Card form sheet (number, expiry, CVC, brand picker). Mock persistence via @AppStorage. |
 | C-M-04 | **Home** | ✅ | ✅ | `ClientHomeView.swift` | `HomeScreen.kt` | Dynamic greeting, workout pills, activity dots, message preview, avatar → Profile sheet. |
 | C-M-05 | **Workout Read View** | ✅ | ✅ | `WorkoutReadView.swift` | `WorkoutReadScreen.kt` | Exercise list, progress bar, stat pills, Done/Next/Upcoming chips. |
 | C-M-06 | **Active Workout Mode** | ✅ | ✅ | `ActiveWorkoutView.swift` | `ActiveWorkoutScreen.kt` | Set table, weight/reps steppers, rest timer with circular countdown, skip/adjust. |
@@ -25,7 +25,7 @@
 | C-M-08 | **Progress** | ✅ | ✅ | `ClientProgressView.swift` | `ProgressScreen.kt` | 4 tabs: Weight (chart+log), PRs, Body, Photos. |
 | C-M-09 | **Schedule** | ✅ | ✅ | `ScheduleView.swift` | `ScheduleScreen.kt` | Session cards, detail sheet, reschedule sheet with duration chips. |
 | C-M-10 | **Messages** | ✅ | ✅ | `MessagesView.swift` | `MessagesScreen.kt` | Chat bubbles, input bar. Send/attach are stubs on both. |
-| C-M-11 | **Payments** | ❌ | ❌ | — | — | Requires Stripe + backend. |
+| C-M-11 | **Payments** | ✅ | ❌ | `PaymentsView.swift` | — | Active plan card, payment method row, payment history list. Reached from Profile → Billing. |
 | C-M-12 | **Profile** | ✅ | ✅ | `ProfileSheet.swift` | `ProfileSheet.kt` | Editable fields, toggles, support links, Sign Out → role picker. |
 
 ### Client Mobile — Out of Scope
@@ -82,10 +82,10 @@
 
 | Surface | Screens | iOS ✅ | Android ✅ | ❌ Both | 🚫 |
 |---------|---------|--------|-----------|---------|-----|
-| Client Mobile | 12 | 10 | 8 | 1 | 1 |
+| Client Mobile | 12 | 12 | 8 | 0 | 1 |
 | Trainer Mobile | 7 | 7 | 6 | 0 | 1 |
 | Trainer Web | 16 | 0 | 0 | 16 | 0 |
-| **TOTAL** | **35** | **17** | **14** | **16** | **2** |
+| **TOTAL** | **35** | **19** | **14** | **14** | **2** |
 
 ---
 

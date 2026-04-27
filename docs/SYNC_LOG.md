@@ -19,6 +19,13 @@
 
 ## Log
 
+### 2026-04-28 — [ios] Payments: C-M-03 + C-M-11
+- **Screen:** Payments (C-M-11), Add Payment Method (C-M-03)
+- **iOS Change:** Built `PaymentsView` with active plan card, payment method row, and payment history list. Built `AddPaymentMethodView` as a sheet with card preview, brand picker, card number/expiry/CVC fields, save and skip buttons. Added `PaymentMethod`, `PaymentHistoryItem`, `SubscriptionPlan` models with `@AppStorage` persistence. Added "Payments & Plans" row to `ProfileSheet`.
+- **Android Status:** ❌ N/A (iOS only session)
+- **Files touched:** `ios/Client/Views/PaymentsView.swift`, `ios/Client/Views/AddPaymentMethodView.swift`, `ios/Shared/Models/FHModels.swift`, `ios/Client/Views/ProfileSheet.swift`
+- **Notes:** No Stripe SDK integration — mock UI only. Card data persists via `@AppStorage` JSON encoding.
+
 ### 2026-04-28 — [ios] Split auth into three-page flow
 - **Screen:** App entry point (C-M-01, T-M-01)
 - **iOS Change:** Replaced overloaded single-screen auth with a clean three-page flow: `AuthLandingView` ("Sign In" / "Get Started") → `AuthSignInView` (email/password + SSO) or `AuthSignUpOptionsView` ("I was invited" / "I'm a trainer"). Each screen has at most 2 primary actions. Added invite code field to `ClientAuthView`. Added sign-up mode to `TrainerAuthView`.
