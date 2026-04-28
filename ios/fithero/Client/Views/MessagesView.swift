@@ -12,8 +12,11 @@ struct MessagesView: View {
     @State private var showVideoCallAlert = false
     @State private var showPhotoPicker = false
     @State private var selectedPhoto: PhotosPickerItem?
-    @State private var showImagePreview = false
-    @State private var previewStartIndex = 0
+    @State private var showImageGallery = false
+    @State private var galleryStartIndex = 0
+    @State private var showSendPreview = false
+    @State private var pendingImageData: Data?
+    @State private var pendingCaption = ""
     @FocusState private var isInputFocused: Bool
 
     private var imageMessages: [ChatMessage] {
@@ -39,11 +42,11 @@ struct MessagesView: View {
             }
             .background(FH.Colors.bg)
 
-            if showImagePreview {
+            if showImageGallery {
                 ChatImageGallery(
                     imageMessages: imageMessages,
-                    startIndex: previewStartIndex,
-                    onDismiss: { showImagePreview = false }
+                    startIndex: galleryStartIndex,
+                    onDismiss: { showImageGallery = false }
                 )
                 .transition(.opacity)
                 .zIndex(1)
@@ -57,7 +60,15 @@ struct MessagesView: View {
         .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
         .onChange(of: selectedPhoto) { _, newItem in
             guard let newItem else { return }
-            Task { await loadAndSendImage(from: newItem) }
+            Task { await loadImageForPreview(from: newItem) }
+        }
+        .sheet(isPresented: $showSendPreview) {
+            ImageSendPreview(
+                imageData: pendingImageData,
+                caption: $pendingCaption,
+                onSend: sendPendingImage,
+                onCancel: cancelPendingImage
+            )
         }
     }
 
@@ -164,6 +175,7 @@ struct MessagesView: View {
     private func messageBubble(_ message: ChatMessage) -> some View {
         let isTrainer = message.isFromTrainer
         let alignment: HorizontalAlignment = isTrainer ? .leading : .trailing
+        let isFromMe = isTrainerContext ? isTrainer : !isTrainer
 
         return VStack(alignment: alignment, spacing: FH.Spacing.xs) {
             HStack {
@@ -182,9 +194,38 @@ struct MessagesView: View {
                             .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
                     }
 
+                    // Caption below image
+                    if message.imageData != nil && !message.text.isEmpty {
+                        Text(message.text)
+                            .font(.system(size: 14))
+                            .foregroundStyle(isTrainer ? FH.Colors.text : FH.Colors.primaryInk)
+                            .padding(.horizontal, FH.Spacing.md)
+                            .padding(.vertical, FH.Spacing.sm)
+                            .background(isTrainer ? FH.Colors.surface : FH.Colors.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.md))
+                    }
+
                     Text(message.timestamp.formatted(.dateTime.hour().minute()))
                         .font(.system(size: 11))
                         .foregroundStyle(FH.Colors.textSubtle)
+                }
+                .contextMenu {
+                    if message.imageData == nil {
+                        Button {
+                            UIPasteboard.general.string = message.text
+                        } label: {
+                            Label("Copy", systemImage: "doc.on.doc")
+                        }
+                    }
+                    if isFromMe {
+                        Button(role: .destructive) {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                messages.removeAll { $0.id == message.id }
+                            }
+                        } label: {
+                            Label("Unsend", systemImage: "arrow.uturn.backward")
+                        }
+                    }
                 }
 
                 if isTrainer { Spacer(minLength: 40) }
@@ -206,8 +247,8 @@ struct MessagesView: View {
             .onTapGesture {
                 FHHaptics.medium()
                 if let index = imageMessages.firstIndex(where: { $0.id == message.id }) {
-                    previewStartIndex = index
-                    showImagePreview = true
+                    galleryStartIndex = index
+                    showImageGallery = true
                 }
             }
     }
@@ -272,25 +313,114 @@ struct MessagesView: View {
         }
     }
 
-    private func loadAndSendImage(from item: PhotosPickerItem) async {
+    private func loadImageForPreview(from item: PhotosPickerItem) async {
         guard let data = try? await item.loadTransferable(type: Data.self),
               let image = UIImage(data: data),
               let jpegData = image.jpegData(compressionQuality: 0.85) else { return }
 
         await MainActor.run {
-            FHHaptics.medium()
-            let newMessage = ChatMessage(
-                senderName: isTrainerContext ? partnerName : SampleData.clientName,
-                isFromTrainer: isTrainerContext,
-                text: "",
-                timestamp: Date(),
-                isImageAttachment: true,
-                imageData: jpegData
-            )
+            pendingImageData = jpegData
+            pendingCaption = ""
+            showSendPreview = true
+            selectedPhoto = nil
+        }
+    }
 
-            withAnimation(.easeOut(duration: 0.2)) {
-                messages.append(newMessage)
-                selectedPhoto = nil
+    private func sendPendingImage() {
+        guard let imageData = pendingImageData else { return }
+        FHHaptics.medium()
+
+        let caption = pendingCaption.trimmingCharacters(in: .whitespaces)
+        let newMessage = ChatMessage(
+            senderName: isTrainerContext ? partnerName : SampleData.clientName,
+            isFromTrainer: isTrainerContext,
+            text: caption,
+            timestamp: Date(),
+            isImageAttachment: true,
+            imageData: imageData
+        )
+
+        withAnimation(.easeOut(duration: 0.2)) {
+            messages.append(newMessage)
+        }
+
+        pendingImageData = nil
+        pendingCaption = ""
+        showSendPreview = false
+    }
+
+    private func cancelPendingImage() {
+        pendingImageData = nil
+        pendingCaption = ""
+        showSendPreview = false
+    }
+}
+
+// MARK: - Image Send Preview Sheet
+
+struct ImageSendPreview: View {
+    let imageData: Data?
+    @Binding var caption: String
+    let onSend: () -> Void
+    let onCancel: () -> Void
+    @FocusState private var captionFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                FH.Colors.bg.ignoresSafeArea()
+
+                VStack(spacing: FH.Spacing.xl) {
+                    if let data = imageData, let uiImage = UIImage(data: data) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: FH.Radius.lg)
+                                    .stroke(FH.Colors.border, lineWidth: 1)
+                            )
+                            .padding(.horizontal, FH.Spacing.base)
+                    }
+
+                    HStack(spacing: FH.Spacing.md) {
+                        TextField("Add a caption...", text: $caption, axis: .vertical)
+                            .font(.system(size: 15))
+                            .foregroundStyle(FH.Colors.text)
+                            .padding(.horizontal, FH.Spacing.md)
+                            .padding(.vertical, FH.Spacing.md)
+                            .background(FH.Colors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.pill))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: FH.Radius.pill)
+                                    .stroke(FH.Colors.border, lineWidth: 1)
+                            )
+                            .focused($captionFocused)
+                            .lineLimit(1...4)
+
+                        Button {
+                            onSend()
+                        } label: {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundStyle(FH.Colors.primary)
+                        }
+                    }
+                    .padding(.horizontal, FH.Spacing.base)
+
+                    Spacer()
+                }
+                .padding(.top, FH.Spacing.lg)
+            }
+            .navigationTitle("Send Photo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                    .foregroundStyle(FH.Colors.textMuted)
+                }
             }
         }
     }
@@ -329,24 +459,16 @@ struct ChatImageGallery: View {
             let safeTop = geo.safeAreaInsets.top
 
             ZStack {
-                // Background
                 Color.black
                     .ignoresSafeArea()
                     .opacity(1.0 - abs(vDrag) / max(h, 1) * 0.5)
 
-                // Images laid out horizontally via offset
                 ForEach(Array(imageMessages.enumerated()), id: \.offset) { i, msg in
                     if let data = msg.imageData, let uiImage = UIImage(data: data) {
-                        galleryImage(
-                            uiImage: uiImage,
-                            index: i,
-                            width: w,
-                            height: h
-                        )
+                        galleryImage(uiImage: uiImage, index: i, width: w, height: h)
                     }
                 }
 
-                // Top controls (above gesture layer)
                 VStack {
                     HStack {
                         Text("\(currentIndex + 1) of \(imageMessages.count)")
@@ -371,7 +493,6 @@ struct ChatImageGallery: View {
                 .allowsHitTesting(true)
                 .zIndex(2)
             }
-            // Gesture layer — on the full-screen container, not on individual images
             .contentShape(Rectangle())
             .simultaneousGesture(
                 MagnificationGesture()
@@ -424,7 +545,6 @@ struct ChatImageGallery: View {
                             let velX = value.predictedEndTranslation.width - value.translation.width
                             let velY = value.velocity.height
 
-                            // Dismiss
                             if abs(vDrag) > 100 || (abs(vDrag) > 40 && abs(velY) > 600) {
                                 withAnimation(.easeOut(duration: 0.25)) {
                                     vDrag = vDrag > 0 ? h : -h
@@ -433,12 +553,10 @@ struct ChatImageGallery: View {
                                     onDismiss()
                                 }
                             } else if hDrag < -threshold || (hDrag < -50 && velX < -600) {
-                                // Next
                                 withAnimation(.easeOut(duration: 0.25)) {
                                     currentIndex = min(currentIndex + 1, imageMessages.count - 1)
                                 }
                             } else if hDrag > threshold || (hDrag > 50 && velX > 600) {
-                                // Prev
                                 withAnimation(.easeOut(duration: 0.25)) {
                                     currentIndex = max(currentIndex - 1, 0)
                                 }
