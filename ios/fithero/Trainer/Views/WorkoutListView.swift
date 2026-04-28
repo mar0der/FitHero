@@ -4,6 +4,7 @@ struct WorkoutListView: View {
     @State private var searchText = ""
     @State private var showNewWorkout = false
     @State private var selectedExercise: Exercise? = nil
+    @State private var selectedWorkout: Workout? = nil
 
     var filteredWorkouts: [Workout] {
         var result = SampleData.workoutLibrary
@@ -38,6 +39,9 @@ struct WorkoutListView: View {
         }
         .sheet(item: $selectedExercise) { exercise in
             ExerciseDetailView(exercise: exercise, showClientData: false)
+        }
+        .sheet(item: $selectedWorkout) { workout in
+            WorkoutDetailView(workout: workout)
         }
     }
 
@@ -104,7 +108,7 @@ struct WorkoutListView: View {
                         .foregroundStyle(FH.Colors.textMuted)
                 }
                 Spacer()
-                menuButton
+                menuButton(for: workout)
             }
 
             HStack(spacing: FH.Spacing.sm) {
@@ -155,9 +159,37 @@ struct WorkoutListView: View {
         )
     }
 
-    private var menuButton: some View {
-        Button {
-            // Options: Edit, Duplicate, Delete
+    private func menuButton(for workout: Workout) -> some View {
+        Menu {
+            Button {
+                FHHaptics.selection()
+                selectedWorkout = workout
+            } label: {
+                Label("View Details", systemImage: "eye")
+            }
+
+            Button {
+                FHHaptics.selection()
+                // Edit workout
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+
+            Button {
+                FHHaptics.selection()
+                // Duplicate workout
+            } label: {
+                Label("Duplicate", systemImage: "doc.on.doc")
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+                FHHaptics.medium()
+                // Delete workout
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 16, weight: .semibold))
@@ -166,7 +198,6 @@ struct WorkoutListView: View {
                 .background(FH.Colors.surface2)
                 .clipShape(Circle())
         }
-        .buttonStyle(.plain)
     }
 
     private func statPill(icon: String, text: String) -> some View {
