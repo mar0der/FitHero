@@ -189,3 +189,30 @@
 ---
 
 *Append new entries at the top. Do not delete old entries.*
+
+---
+
+## 2026-04-28 — iOS Lead Session
+
+### Changes
+- **[ios] Chat**: Multi-select `PhotosPicker` — pick several images at once, preview in horizontal thumbnail strip, shared caption sent as separate text message after image bubbles.
+- **[ios] DatePicker**: Fixed invisible date numbers in dark mode. Replaced `.colorMultiply` with `.tint(FH.Colors.primary) + .colorScheme(.dark)` on both `RescheduleSheet` and `ClientDetailView` schedule picker.
+- **[ios] Exercise Detail (C-M-13)**: New `ExerciseDetailView` — full exercise info (muscle groups, equipment, instructions, PR highlight, recent set history with weight×reps breakdown). Reached from `WorkoutReadView` (ⓘ button), `ActiveWorkoutView` (tap header), and `ClientProgressView` PRs (tappable rows).
+- **[ios] Workout History (C-M-14)**: New `WorkoutHistoryView` — list of completed workouts with stats header (total, rated, avg RPE), date rows with RPE badge, detail sheet per session. Reached from `ProfileSheet` → Activity section.
+- **[ios] Models**: Extended `Exercise` with `instructions`, `muscleGroups`, `equipment`. Added `ExerciseHistoryEntry` and `CompletedWorkout` models. Added sample history for bench press and squat, plus 8 sample completed workouts.
+- **[docs] SCREEN_STATUS**: Updated client mobile count 12→14 (C-M-13, C-M-14 both ✅ iOS).
+
+### Files Added
+- `ios/fithero/Client/Views/ExerciseDetailView.swift`
+- `ios/fithero/Client/Views/WorkoutHistoryView.swift`
+
+### Files Modified
+- `ios/fithero/Shared/Models/FHModels.swift`
+- `ios/fithero/Client/Views/MessagesView.swift`
+- `ios/fithero/Client/Views/RescheduleSheet.swift`
+- `ios/fithero/Trainer/Views/ClientDetailView.swift`
+- `ios/fithero/Client/Views/WorkoutReadView.swift`
+- `ios/fithero/Client/Views/ActiveWorkoutView.swift`
+- `ios/fithero/Client/Views/ClientProgressView.swift`
+- `ios/fithero/Client/Views/ProfileSheet.swift`
+- `docs/SCREEN_STATUS.md`

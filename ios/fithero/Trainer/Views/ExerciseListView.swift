@@ -4,6 +4,7 @@ struct ExerciseListView: View {
     @State private var searchText = ""
     @State private var selectedCategory = "All"
     @State private var showNewExercise = false
+    @State private var selectedExercise: Exercise? = nil
 
     let categories = ["All", "Push", "Pull", "Legs", "Core", "Mobility", "Cardio"]
 
@@ -40,6 +41,9 @@ struct ExerciseListView: View {
             NewExerciseSheet()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $selectedExercise) { exercise in
+            ExerciseDetailView(exercise: exercise)
         }
     }
 
@@ -124,51 +128,57 @@ struct ExerciseListView: View {
     }
 
     private func exerciseRow(_ exercise: Exercise) -> some View {
-        HStack(spacing: FH.Spacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: FH.Radius.md)
-                    .fill(categoryColor(exercise.category).opacity(0.15))
-                    .frame(width: 48, height: 48)
-                Image(systemName: exercise.sfSymbol)
-                    .font(.system(size: 20))
-                    .foregroundStyle(categoryColor(exercise.category))
-                    .symbolRenderingMode(.hierarchical)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(exercise.name)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(FH.Colors.text)
-
-                HStack(spacing: FH.Spacing.sm) {
-                    Text(exercise.category)
-                        .font(.system(size: 11, weight: .medium))
+        Button {
+            FHHaptics.selection()
+            selectedExercise = exercise
+        } label: {
+            HStack(spacing: FH.Spacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: FH.Radius.md)
+                        .fill(categoryColor(exercise.category).opacity(0.15))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: exercise.sfSymbol)
+                        .font(.system(size: 20))
                         .foregroundStyle(categoryColor(exercise.category))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(categoryColor(exercise.category).opacity(0.12))
-                        .clipShape(Capsule())
-
-                    Text("\(exercise.targetSets) sets · \(exercise.targetReps) reps")
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(FH.Colors.textMuted)
-                        .monospacedDigit()
+                        .symbolRenderingMode(.hierarchical)
                 }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(exercise.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(FH.Colors.text)
+
+                    HStack(spacing: FH.Spacing.sm) {
+                        Text(exercise.category)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(categoryColor(exercise.category))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(categoryColor(exercise.category).opacity(0.12))
+                            .clipShape(Capsule())
+
+                        Text("\(exercise.targetSets) sets · \(exercise.targetReps) reps")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(FH.Colors.textMuted)
+                            .monospacedDigit()
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(FH.Colors.textSubtle)
             }
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(FH.Colors.textSubtle)
+            .padding(FH.Spacing.md)
+            .background(FH.Colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: FH.Radius.lg)
+                    .stroke(FH.Colors.border, lineWidth: 1)
+            )
         }
-        .padding(FH.Spacing.md)
-        .background(FH.Colors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
-        .overlay(
-            RoundedRectangle(cornerRadius: FH.Radius.lg)
-                .stroke(FH.Colors.border, lineWidth: 1)
-        )
+        .buttonStyle(.plain)
     }
 
     // MARK: - Add Button

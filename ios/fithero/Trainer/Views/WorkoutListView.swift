@@ -3,6 +3,7 @@ import SwiftUI
 struct WorkoutListView: View {
     @State private var searchText = ""
     @State private var showNewWorkout = false
+    @State private var selectedExercise: Exercise? = nil
 
     var filteredWorkouts: [Workout] {
         var result = SampleData.workoutLibrary
@@ -34,6 +35,9 @@ struct WorkoutListView: View {
             NewWorkoutSheet()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $selectedExercise) { exercise in
+            ExerciseDetailView(exercise: exercise)
         }
     }
 
@@ -112,17 +116,23 @@ struct WorkoutListView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: FH.Spacing.sm) {
                     ForEach(workout.exercises.prefix(4)) { exercise in
-                        HStack(spacing: 4) {
-                            Image(systemName: exercise.sfSymbol)
-                                .font(.system(size: 10))
-                            Text(exercise.name)
-                                .font(.system(size: 11, weight: .medium))
+                        Button {
+                            FHHaptics.selection()
+                            selectedExercise = exercise
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: exercise.sfSymbol)
+                                    .font(.system(size: 10))
+                                Text(exercise.name)
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundStyle(FH.Colors.textMuted)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(FH.Colors.surface2)
+                            .clipShape(Capsule())
                         }
-                        .foregroundStyle(FH.Colors.textMuted)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(FH.Colors.surface2)
-                        .clipShape(Capsule())
+                        .buttonStyle(.plain)
                     }
                     if workout.exercises.count > 4 {
                         Text("+\(workout.exercises.count - 4) more")
@@ -342,6 +352,7 @@ struct ExercisePickerSheet: View {
     @Binding var selectedExercises: [Exercise]
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
+    @State private var previewExercise: Exercise? = nil
 
     var filteredExercises: [Exercise] {
         if searchText.isEmpty { return SampleData.exerciseLibrary }
@@ -395,58 +406,75 @@ struct ExercisePickerSheet: View {
                     VStack(spacing: FH.Spacing.sm) {
                         ForEach(filteredExercises) { exercise in
                             let isSelected = selectedExercises.contains(where: { $0.id == exercise.id })
-                            Button {
-                                if isSelected {
-                                    selectedExercises.removeAll(where: { $0.id == exercise.id })
-                                } else {
-                                    selectedExercises.append(exercise)
-                                }
-                            } label: {
-                                HStack(spacing: FH.Spacing.md) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: FH.Radius.md)
-                                            .fill(isSelected ? FH.Colors.primary.opacity(0.15) : FH.Colors.surface2)
-                                            .frame(width: 40, height: 40)
-                                        Image(systemName: exercise.sfSymbol)
-                                            .font(.system(size: 16))
-                                            .foregroundStyle(isSelected ? FH.Colors.primary : FH.Colors.textMuted)
-                                    }
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(exercise.name)
-                                            .font(.system(size: 15, weight: isSelected ? .semibold : .medium))
-                                            .foregroundStyle(isSelected ? FH.Colors.primary : FH.Colors.text)
-                                        Text("\(exercise.targetSets) sets · \(exercise.targetReps) reps")
-                                            .font(.system(size: 12))
-                                            .foregroundStyle(FH.Colors.textMuted)
-                                    }
-
-                                    Spacer()
-
+                            HStack(spacing: FH.Spacing.md) {
+                                Button {
                                     if isSelected {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .font(.system(size: 22))
-                                            .foregroundStyle(FH.Colors.primary)
+                                        selectedExercises.removeAll(where: { $0.id == exercise.id })
                                     } else {
-                                        Circle()
-                                            .stroke(FH.Colors.border, lineWidth: 1.5)
-                                            .frame(width: 22, height: 22)
+                                        selectedExercises.append(exercise)
                                     }
+                                } label: {
+                                    HStack(spacing: FH.Spacing.md) {
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: FH.Radius.md)
+                                                .fill(isSelected ? FH.Colors.primary.opacity(0.15) : FH.Colors.surface2)
+                                                .frame(width: 40, height: 40)
+                                            Image(systemName: exercise.sfSymbol)
+                                                .font(.system(size: 16))
+                                                .foregroundStyle(isSelected ? FH.Colors.primary : FH.Colors.textMuted)
+                                        }
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(exercise.name)
+                                                .font(.system(size: 15, weight: isSelected ? .semibold : .medium))
+                                                .foregroundStyle(isSelected ? FH.Colors.primary : FH.Colors.text)
+                                            Text("\(exercise.targetSets) sets · \(exercise.targetReps) reps")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(FH.Colors.textMuted)
+                                        }
+
+                                        Spacer()
+
+                                        if isSelected {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.system(size: 22))
+                                                .foregroundStyle(FH.Colors.primary)
+                                        } else {
+                                            Circle()
+                                                .stroke(FH.Colors.border, lineWidth: 1.5)
+                                                .frame(width: 22, height: 22)
+                                        }
+                                    }
+                                    .padding(FH.Spacing.md)
+                                    .background(isSelected ? FH.Colors.primary.opacity(0.05) : FH.Colors.surface)
+                                    .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: FH.Radius.lg)
+                                            .stroke(isSelected ? FH.Colors.primary.opacity(0.35) : FH.Colors.border, lineWidth: 1)
+                                    )
                                 }
-                                .padding(FH.Spacing.md)
-                                .background(isSelected ? FH.Colors.primary.opacity(0.05) : FH.Colors.surface)
-                                .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: FH.Radius.lg)
-                                        .stroke(isSelected ? FH.Colors.primary.opacity(0.35) : FH.Colors.border, lineWidth: 1)
-                                )
+                                .buttonStyle(.plain)
+
+                                // Info button
+                                Button {
+                                    FHHaptics.selection()
+                                    previewExercise = exercise
+                                } label: {
+                                    Image(systemName: "info.circle")
+                                        .font(.system(size: 16))
+                                        .foregroundStyle(FH.Colors.textSubtle)
+                                        .frame(width: 36, height: 44)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, FH.Spacing.base)
                     .padding(.bottom, FH.Spacing.xxxl)
                 }
+            }
+            .sheet(item: $previewExercise) { exercise in
+                ExerciseDetailView(exercise: exercise)
             }
         }
     }
