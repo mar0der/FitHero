@@ -45,6 +45,8 @@ struct MessagesView: View {
                     startIndex: previewStartIndex,
                     onDismiss: { showImagePreview = false }
                 )
+                .ignoresSafeArea()
+                .transition(.opacity)
             }
         }
         .alert("Video Call", isPresented: $showVideoCallAlert) {
@@ -294,66 +296,27 @@ struct MessagesView: View {
     }
 }
 
-// MARK: - Full-Screen Image Gallery with Swipe & Zoom
+// MARK: - Full-Screen Image Gallery (UIKit-backed)
 
 struct ChatImageGallery: View {
     let imageMessages: [ChatMessage]
     let startIndex: Int
     let onDismiss: () -> Void
 
-    @State private var selectedIndex: Int
-    @State private var pageScales: [CGFloat]
-    @State private var pageOffsets: [CGSize]
-    @State private var dismissProgress: CGFloat = 0
-    @State private var isDragging = false
-
-    init(imageMessages: [ChatMessage], startIndex: Int, onDismiss: @escaping () -> Void) {
-        self.imageMessages = imageMessages
-        self.startIndex = startIndex
-        self.onDismiss = onDismiss
-        _selectedIndex = State(initialValue: startIndex)
-        _pageScales = State(initialValue: Array(repeating: 1.0, count: imageMessages.count))
-        _pageOffsets = State(initialValue: Array(repeating: .zero, count: imageMessages.count))
-    }
-
-    private var currentScale: CGFloat { pageScales[selectedIndex] }
-    private var isZoomed: Bool { currentScale > 1.05 }
-
     var body: some View {
         ZStack {
-            Color.black.opacity(0.95)
-                .ignoresSafeArea()
-                .opacity(1.0 - abs(dismissProgress) * 0.6)
+            ImageGalleryUIView(
+                images: imageMessages.compactMap { $0.imageData.flatMap(UIImage.init) },
+                startIndex: startIndex,
+                onDismiss: onDismiss
+            )
+            .ignoresSafeArea()
 
-            TabView(selection: $selectedIndex) {
-                ForEach(Array(imageMessages.enumerated()), id: \.element.id) { index, message in
-                    if let data = message.imageData, let uiImage = UIImage(data: data) {
-                        zoomableImagePage(
-                            uiImage: uiImage,
-                            index: index
-                        )
-                    }
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .offset(y: dismissProgress * 300)
-            .scaleEffect(1.0 - abs(dismissProgress) * 0.1)
-            .disabled(isDragging)
-
-            // Top bar
             VStack {
                 HStack {
-                    Text("\(selectedIndex + 1) of \(imageMessages.count)")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.8))
-
                     Spacer()
-
                     Button {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            onDismiss()
-                        }
+                        onDismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 28))
@@ -365,93 +328,220 @@ struct ChatImageGallery: View {
 
                 Spacer()
             }
-            .opacity(1.0 - abs(dismissProgress) * 2)
+        }
+    }
+}
+
+// MARK: - UIViewRepresentable Gallery
+
+struct ImageGalleryUIView: UIViewRepresentable {
+    let images: [UIImage]
+    let startIndex: Int
+    let onDismiss: () -> Void
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.isPagingEnabled = true
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.backgroundColor = .black
+        scrollView.delegate = context.coordinator
+        context.coordinator.hostScrollView = scrollView
+
+        // Vertical pan for dismiss
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleVerticalPan(_:)))
+        pan.delegate = context.coordinator
+        scrollView.addGestureRecognizer(pan)
+        context.coordinator.dismissPan = pan
+
+        for (i, image) in images.enumerated() {
+            let page = ZoomingImagePage(image: image, tag: i)
+            page.scrollView.delegate = context.coordinator
+            scrollView.addSubview(page)
+            context.coordinator.pages[i] = page
+        }
+
+        return scrollView
+    }
+
+    func updateUIView(_ scrollView: UIScrollView, context: Context) {
+        let w = scrollView.bounds.width
+        let h = scrollView.bounds.height
+        guard w > 0, h > 0 else { return }
+
+        for (i, page) in context.coordinator.pages.sorted(by: { $0.key < $1.key }) {
+            page.frame = CGRect(x: CGFloat(i) * w, y: 0, width: w, height: h)
+            page.layoutImageView()
+        }
+
+        scrollView.contentSize = CGSize(width: w * CGFloat(images.count), height: h)
+        scrollView.contentOffset = CGPoint(x: CGFloat(startIndex) * w, y: 0)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+        let parent: ImageGalleryUIView
+        weak var hostScrollView: UIScrollView?
+        fileprivate var pages: [Int: ZoomingImagePage] = [:]
+        weak var dismissPan: UIPanGestureRecognizer?
+
+        private var dismissStartY: CGFloat = 0
+        private var currentDismissOffset: CGFloat = 0
+
+        init(_ parent: ImageGalleryUIView) {
+            self.parent = parent
+        }
+
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+            if let page = pages[scrollView.tag] {
+                return page.imageView
+            }
+            return nil
+        }
+
+        func scrollViewDidZoom(_ scrollView: UIScrollView) {
+            if let page = pages[scrollView.tag] {
+                page.centerImage()
+            }
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            // Allow vertical pan to work alongside scroll view
+            if gestureRecognizer == dismissPan {
+                return true
+            }
+            return false
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard gestureRecognizer == dismissPan,
+                  let pan = gestureRecognizer as? UIPanGestureRecognizer,
+                  let host = hostScrollView else { return true }
+
+            let translation = pan.translation(in: host)
+            let velocity = pan.velocity(in: host)
+
+            // Only start vertical dismiss if:
+            // 1. Movement is more vertical than horizontal
+            // 2. Current page is not zoomed
+            let currentPageIndex = Int(round(host.contentOffset.x / host.bounds.width))
+            let isZoomed = pages[currentPageIndex]?.scrollView.zoomScale ?? 1.0 > 1.05
+
+            return !isZoomed && abs(translation.y) > abs(translation.x) && abs(velocity.y) > abs(velocity.x)
+        }
+
+        @objc func handleVerticalPan(_ pan: UIPanGestureRecognizer) {
+            guard let host = hostScrollView else { return }
+            let translation = pan.translation(in: host)
+
+            switch pan.state {
+            case .began:
+                dismissStartY = host.transform.ty
+                currentDismissOffset = 0
+
+            case .changed:
+                currentDismissOffset = translation.y
+                let progress = min(abs(currentDismissOffset) / (host.bounds.height * 0.4), 1.0)
+
+                host.transform = CGAffineTransform(translationX: 0, y: currentDismissOffset * 0.6)
+                host.alpha = 1.0 - progress * 0.5
+                for page in pages.values {
+                    page.scrollView.alpha = 1.0 - progress * 0.3
+                }
+
+            case .ended, .cancelled:
+                let velocity = pan.velocity(in: host)
+                let shouldDismiss = abs(currentDismissOffset) > 120 || (abs(currentDismissOffset) > 40 && abs(velocity.y) > 800)
+
+                if shouldDismiss {
+                    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut, animations: {
+                        host.transform = CGAffineTransform(translationX: 0, y: host.bounds.height * (self.currentDismissOffset > 0 ? 1 : -1))
+                        host.alpha = 0
+                    }) { _ in
+                        self.parent.onDismiss()
+                    }
+                } else {
+                    UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut, animations: {
+                        host.transform = .identity
+                        host.alpha = 1
+                        for page in self.pages.values {
+                            page.scrollView.alpha = 1
+                        }
+                    })
+                }
+
+            default:
+                break
+            }
+        }
+    }
+}
+
+// MARK: - Zooming Image Page
+
+private class ZoomingImagePage: UIView {
+    let scrollView = UIScrollView()
+    let imageView = UIImageView()
+
+    init(image: UIImage, tag: Int) {
+        super.init(frame: .zero)
+        self.tag = tag
+        scrollView.tag = tag
+        scrollView.minimumZoomScale = 1.0
+        scrollView.maximumZoomScale = 4.0
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.decelerationRate = .fast
+        scrollView.backgroundColor = .clear
+
+        imageView.image = image
+        imageView.contentMode = .scaleAspectFit
+        imageView.isUserInteractionEnabled = true
+
+        scrollView.addSubview(imageView)
+        addSubview(scrollView)
+
+        // Double-tap to zoom
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        imageView.addGestureRecognizer(doubleTap)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func layoutImageView() {
+        scrollView.frame = bounds
+        imageView.frame = bounds
+        scrollView.contentSize = bounds.size
+        centerImage()
+    }
+
+    func centerImage() {
+        let offsetX = max((scrollView.bounds.width - scrollView.contentSize.width) * 0.5, 0)
+        let offsetY = max((scrollView.bounds.height - scrollView.contentSize.height) * 0.5, 0)
+        imageView.center = CGPoint(
+            x: scrollView.contentSize.width * 0.5 + offsetX,
+            y: scrollView.contentSize.height * 0.5 + offsetY
+        )
+    }
+
+    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+        if scrollView.zoomScale > 1.05 {
+            scrollView.setZoomScale(1.0, animated: true)
+        } else {
+            let point = gesture.location(in: imageView)
+            let rect = zoomRect(for: point, scale: 2.5)
+            scrollView.zoom(to: rect, animated: true)
         }
     }
 
-    private func zoomableImagePage(uiImage: UIImage, index: Int) -> some View {
-        GeometryReader { geo in
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFit()
-                .scaleEffect(pageScales[index])
-                .offset(pageOffsets[index])
-                .frame(width: geo.size.width, height: geo.size.height)
-                .position(x: geo.size.width / 2, y: geo.size.height / 2)
-                .simultaneousGesture(
-                    MagnificationGesture()
-                        .onChanged { value in
-                            let newScale = min(max(value, 1.0), 4.0)
-                            pageScales[index] = newScale
-                        }
-                        .onEnded { _ in
-                            if pageScales[index] < 1.05 {
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    pageScales[index] = 1.0
-                                    pageOffsets[index] = .zero
-                                }
-                            }
-                        }
-                )
-                .simultaneousGesture(
-                    DragGesture()
-                        .onChanged { value in
-                            if pageScales[index] > 1.05 {
-                                pageOffsets[index] = CGSize(
-                                    width: value.translation.width,
-                                    height: value.translation.height
-                                )
-                            } else {
-                                isDragging = true
-                                dismissProgress = value.translation.height / geo.size.height
-                            }
-                        }
-                        .onEnded { value in
-                            isDragging = false
-                            if pageScales[index] > 1.05 {
-                                let velocity = CGSize(
-                                    width: value.predictedEndTranslation.width - value.translation.width,
-                                    height: value.predictedEndTranslation.height - value.translation.height
-                                )
-                                let magnitude = sqrt(velocity.width * velocity.width + velocity.height * velocity.height)
-                                if magnitude > 800 || abs(pageOffsets[index].height) > geo.size.height * 0.4 {
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        pageScales[index] = 1.0
-                                        pageOffsets[index] = .zero
-                                    }
-                                } else {
-                                    withAnimation(.easeOut(duration: 0.3)) {
-                                        pageOffsets[index] = .zero
-                                    }
-                                }
-                            } else {
-                                if value.translation.height > 120 || (value.translation.height > 40 && value.velocity.height > 500) {
-                                    withAnimation(.easeOut(duration: 0.25)) {
-                                        dismissProgress = 1.0
-                                    }
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                                        onDismiss()
-                                    }
-                                } else {
-                                    withAnimation(.easeOut(duration: 0.25)) {
-                                        dismissProgress = 0
-                                    }
-                                }
-                            }
-                        }
-                )
-                .onTapGesture(count: 2) {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        if pageScales[index] > 1.05 {
-                            pageScales[index] = 1.0
-                            pageOffsets[index] = .zero
-                        } else {
-                            pageScales[index] = 2.5
-                        }
-                    }
-                }
-                .tag(index)
-        }
+    private func zoomRect(for point: CGPoint, scale: CGFloat) -> CGRect {
+        let size = CGSize(width: scrollView.bounds.width / scale, height: scrollView.bounds.height / scale)
+        let origin = CGPoint(x: point.x - size.width / 2, y: point.y - size.height / 2)
+        return CGRect(origin: origin, size: size)
     }
 }
 
