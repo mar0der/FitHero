@@ -32,7 +32,7 @@ struct ClientDetailView: View {
                 .padding(.bottom, FH.Spacing.xxxl)
             }
         }
-        .sheet(isPresented: $showMessageSheet) {
+        .fullScreenCover(isPresented: $showMessageSheet) {
             messageSheet
         }
         .sheet(isPresented: $showScheduleSheet) {
@@ -148,7 +148,8 @@ struct ClientDetailView: View {
         MessagesView(
             partnerName: client.name,
             partnerInitial: client.initials,
-            isTrainerContext: true
+            isTrainerContext: true,
+            onBack: { showMessageSheet = false }
         )
     }
 
@@ -589,7 +590,6 @@ struct ScheduleSessionSheet: View {
                                 in: Date()...
                             )
                             .datePickerStyle(.graphical)
-                            .colorMultiply(FH.Colors.primary)
                         }
 
                         VStack(alignment: .leading, spacing: FH.Spacing.md) {

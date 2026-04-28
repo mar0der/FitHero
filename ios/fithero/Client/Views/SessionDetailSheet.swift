@@ -38,6 +38,11 @@ struct SessionDetailSheet: View {
                 RescheduleSheet(session: session)
             }
             .alert(calendarAlertTitle, isPresented: $showCalendarAlert) {
+                if calendarAlertTitle == "Couldn't Add" {
+                    Button("Open Settings") {
+                        CalendarHelper.openSettings()
+                    }
+                }
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(calendarAlertMessage)

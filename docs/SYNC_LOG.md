@@ -19,6 +19,17 @@
 
 ## Log
 
+### 2026-04-28 — [ios] Polish: Chat full-screen, Calendar Settings link, DatePicker fix, Photos week folders
+- **Screen:** Cross-cutting polish pass
+- **iOS Change:**
+  1. **Chat full-screen** — MessagesView now presents as `.fullScreenCover()` (WhatsApp-style) with a back chevron in the header instead of a bottom sheet. Works from TrainerMessages and ClientDetail.
+  2. **Calendar Settings link** — When calendar access is denied, alert now shows "Open Settings" button that deep-links to iOS Settings → Privacy → Calendars. Updated `CalendarHelper.CalendarError` to include `.saveFailed` case.
+  3. **DatePicker visibility** — Removed `.colorMultiply(FH.Colors.primary)` from `ScheduleSessionSheet` DatePicker. Calendar dates now render clearly in dark mode.
+  4. **Photos week folders** — Removed confusing Start/Current placeholder row. Photos now grouped by week into card sections: week label + date range + photo count header, 3-column grid inside. "+ Add" button moved to top-right of section header (pill style). `groupedPhotos` computed property groups by `weekOfYear`.
+- **Android Status:** ❌ N/A (iOS only session)
+- **Files touched:** `ios/Client/Views/MessagesView.swift`, `ClientProgressView.swift`, `Trainer/Views/TrainerMessagesView.swift`, `ClientDetailView.swift`, `Shared/Helpers/CalendarHelper.swift`
+- **Notes:** Full-screen chat tested on device — back chevron dismisses correctly.
+
 ### 2026-04-28 — [ios] Functional gaps: Messages, Calendar, ClientDetail, TrainerMessages, Photos, Haptics
 - **Screens:** C-M-10 (Messages), C-M-09 (Schedule), T-M-04 (ClientDetail), T-M-05 (TrainerMessages), C-M-08 (Photos), Cross-cutting (Haptics)
 - **iOS Change:**

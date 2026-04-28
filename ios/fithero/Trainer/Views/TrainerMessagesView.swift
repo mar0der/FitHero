@@ -22,11 +22,12 @@ struct TrainerMessagesView: View {
                 .padding(.bottom, FH.Spacing.xxxl)
             }
         }
-        .sheet(item: $selectedConversation) { conv in
+        .fullScreenCover(item: $selectedConversation) { conv in
             MessagesView(
                 partnerName: conv.name,
                 partnerInitial: conv.initials,
-                isTrainerContext: true
+                isTrainerContext: true,
+                onBack: { selectedConversation = nil }
             )
         }
     }

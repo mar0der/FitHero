@@ -274,64 +274,108 @@ struct ClientProgressView: View {
     // MARK: - Photos Section
 
     private var photosSection: some View {
-        VStack(spacing: FH.Spacing.lg) {
-            HStack(spacing: FH.Spacing.md) {
-                photoPlaceholder(
-                    label: "Start",
-                    date: photos.first?.date,
-                    icon: "camera",
-                    color: FH.Colors.textSubtle
-                )
-                photoPlaceholder(
-                    label: "Current",
-                    date: Date(),
-                    icon: "camera.fill",
-                    color: FH.Colors.primary
-                )
-            }
-
-            VStack(alignment: .leading, spacing: FH.Spacing.md) {
-                Text("PHOTO TIMELINE")
+        VStack(spacing: FH.Spacing.xl) {
+            // Header with Add button
+            HStack {
+                Text("PROGRESS PHOTOS")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(FH.Colors.textSubtle)
                     .tracking(1.2)
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 120), spacing: FH.Spacing.md)], spacing: FH.Spacing.md) {
-                    ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
-                        Button {
-                            FHHaptics.medium()
-                            viewerSelectedIndex = index
-                            showPhotoViewer = true
-                        } label: {
-                            photoCard(photo)
-                        }
-                        .buttonStyle(.plain)
-                    }
+                Spacer()
 
-                    Button {
-                        showAddPhoto = true
-                    } label: {
-                        VStack(spacing: FH.Spacing.sm) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 24, weight: .semibold))
-                                .foregroundStyle(FH.Colors.primary)
-                            Text("Add")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(FH.Colors.primary)
-                        }
-                        .frame(height: 120)
-                        .frame(maxWidth: .infinity)
-                        .background(FH.Colors.surface)
-                        .clipShape(RoundedRectangle(cornerRadius: FH.Radius.md))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: FH.Radius.md)
-                                .stroke(FH.Colors.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
-                        )
+                Button {
+                    FHHaptics.medium()
+                    showAddPhoto = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Add")
+                            .font(.system(size: 14, weight: .semibold))
                     }
+                    .foregroundStyle(FH.Colors.primaryInk)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(FH.Colors.primary)
+                    .clipShape(Capsule())
                 }
             }
-            .fhCard()
+
+            // Grouped by week
+            VStack(spacing: FH.Spacing.xl) {
+                ForEach(groupedPhotos, id: \.week) { group in
+                    weekPhotoGroup(group)
+                }
+            }
         }
+    }
+
+    private var groupedPhotos: [(week: String, dateRange: String, photos: [ProgressPhoto])] {
+        let cal = Calendar.current
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+
+        // Group by week of year
+        var groups: [Int: [ProgressPhoto]] = [:]
+        for photo in photos {
+            let week = cal.component(.weekOfYear, from: photo.date)
+            groups[week, default: []].append(photo)
+        }
+
+        return groups.sorted { $0.key > $1.key }.map { week, photos in
+            let sorted = photos.sorted { $0.date < $1.date }
+            let first = sorted.first?.date ?? Date()
+            let last = sorted.last?.date ?? Date()
+            let range = first == last ? formatter.string(from: first) : "\(formatter.string(from: first)) – \(formatter.string(from: last))"
+            let label = sorted.first?.label ?? "Week \(week)"
+            return (week: label, dateRange: range, photos: sorted)
+        }
+    }
+
+    private func weekPhotoGroup(_ group: (week: String, dateRange: String, photos: [ProgressPhoto])) -> some View {
+        VStack(alignment: .leading, spacing: FH.Spacing.md) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(group.week)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(FH.Colors.text)
+                    Text(group.dateRange)
+                        .font(.system(size: 12))
+                        .foregroundStyle(FH.Colors.textMuted)
+                }
+                Spacer()
+                Text("\(group.photos.count) photo\(group.photos.count == 1 ? "" : "s")")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(FH.Colors.textSubtle)
+            }
+
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: FH.Spacing.sm),
+                GridItem(.flexible(), spacing: FH.Spacing.sm),
+                GridItem(.flexible(), spacing: FH.Spacing.sm)
+            ], spacing: FH.Spacing.sm) {
+                ForEach(group.photos) { photo in
+                    Button {
+                        FHHaptics.medium()
+                        if let index = photos.firstIndex(where: { $0.id == photo.id }) {
+                            viewerSelectedIndex = index
+                            showPhotoViewer = true
+                        }
+                    } label: {
+                        photoCard(photo)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(FH.Spacing.base)
+        .background(FH.Colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: FH.Radius.lg)
+                .stroke(FH.Colors.border, lineWidth: 1)
+        )
     }
 
     private func photoPlaceholder(label: String, date: Date?, icon: String, color: Color) -> some View {

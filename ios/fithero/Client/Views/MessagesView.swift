@@ -5,19 +5,20 @@ struct MessagesView: View {
     let partnerName: String
     let partnerInitial: String
     let isTrainerContext: Bool
+    var onBack: (() -> Void)? = nil
 
     @State private var messages: [ChatMessage]
     @State private var inputText = ""
     @State private var showVideoCallAlert = false
     @State private var showPhotoPicker = false
     @State private var selectedPhoto: PhotosPickerItem?
-    @State private var scrollToBottom = UUID()
     @FocusState private var isInputFocused: Bool
 
-    init(partnerName: String? = nil, partnerInitial: String? = nil, isTrainerContext: Bool = false) {
+    init(partnerName: String? = nil, partnerInitial: String? = nil, isTrainerContext: Bool = false, onBack: (() -> Void)? = nil) {
         self.partnerName = partnerName ?? SampleData.trainerName
         self.partnerInitial = partnerInitial ?? SampleData.trainerAvatar
         self.isTrainerContext = isTrainerContext
+        self.onBack = onBack
         _messages = State(initialValue: SampleData.messages)
     }
 
@@ -46,18 +47,30 @@ struct MessagesView: View {
 
     private var chatHeader: some View {
         HStack(spacing: FH.Spacing.md) {
+            if let onBack = onBack {
+                Button {
+                    FHHaptics.light()
+                    onBack()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(FH.Colors.text)
+                        .frame(width: 36, height: 36)
+                }
+            }
+
             ZStack {
                 Circle()
                     .fill(FH.Colors.accent.opacity(0.15))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 40, height: 40)
                 Text(partnerInitial)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(FH.Colors.accent)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(partnerName)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(FH.Colors.text)
                 HStack(spacing: 4) {
                     Circle()
@@ -79,7 +92,7 @@ struct MessagesView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(FH.Colors.textMuted)
                     .frame(width: 40, height: 40)
-                    .background(FH.Colors.surface)
+                    .background(FH.Colors.surface2)
                     .clipShape(Circle())
             }
         }

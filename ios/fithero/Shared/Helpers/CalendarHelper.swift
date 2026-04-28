@@ -10,7 +10,7 @@ enum CalendarHelper {
         startDate: Date,
         durationMinutes: Int,
         location: String?,
-        completion: @escaping (Result<Void, Error>) -> Void
+        completion: @escaping (Result<Void, CalendarError>) -> Void
     ) {
         let createEvent = {
             let event = EKEvent(eventStore: store)
@@ -26,7 +26,7 @@ enum CalendarHelper {
                 try store.save(event, span: .thisEvent)
                 completion(.success(()))
             } catch {
-                completion(.failure(error))
+                completion(.failure(.saveFailed(error.localizedDescription)))
             }
         }
 
@@ -38,31 +38,40 @@ enum CalendarHelper {
             store.requestFullAccessToEvents { granted, error in
                 DispatchQueue.main.async {
                     if let error = error {
-                        completion(.failure(error))
+                        completion(.failure(.saveFailed(error.localizedDescription)))
                     } else if granted {
                         createEvent()
                     } else {
-                        completion(.failure(CalendarError.denied))
+                        completion(.failure(.denied))
                     }
                 }
             }
         case .denied, .restricted:
-            completion(.failure(CalendarError.denied))
+            completion(.failure(.denied))
         @unknown default:
-            completion(.failure(CalendarError.unknown))
+            completion(.failure(.unknown))
+        }
+    }
+
+    static func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
         }
     }
 
     enum CalendarError: LocalizedError {
         case denied
         case unknown
+        case saveFailed(String)
 
         var errorDescription: String? {
             switch self {
             case .denied:
-                return "Calendar access denied. Enable it in Settings > Privacy & Security > Calendars."
+                return "Calendar access is required to add sessions."
             case .unknown:
                 return "Something went wrong. Please try again."
+            case .saveFailed(let msg):
+                return msg
             }
         }
     }
