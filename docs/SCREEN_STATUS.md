@@ -41,7 +41,7 @@
 | ID | Screen | iOS Status | Android Status | iOS File | Android File | Notes |
 |----|--------|-----------|----------------|----------|--------------|-------|
 | T-M-01 | **Sign In / Sign Up** | ✅ | ❌ | `TrainerAuthView.swift` | — | Trainer auth with sign-in and sign-up modes. Name, business, email, password fields. |
-| T-M-02 | **Today** | ✅ | ✅ | `TodayView.swift` | `TrainerTodayScreen.kt` | Sessions list, stats, notifications sheet. |
+| T-M-02 | **Today** | ✅ | ✅ | `TodayView.swift` | `TrainerTodayScreen.kt` | Sessions list with swipe-to-complete/reschedule/cancel, empty state, "Mark all complete", dynamic stats. |
 | T-M-03 | **Clients** | ✅ | ✅ | `ClientsView.swift` | `TrainerClientsScreen.kt` | Search, filter pills, client rows with status. |
 | T-M-04 | **Client Mini-Profile** | ✅ | ✅ | `ClientDetailView.swift` | `ClientDetailScreen.kt` | Tap client row → detail. 4 tabs: Overview, Programs, Progress, Notes. |
 | T-M-05 | **Messages** | ✅ | ✅ | `TrainerMessagesView.swift` | `TrainerMessagesScreen.kt` | Conversation inbox with unread badges. |

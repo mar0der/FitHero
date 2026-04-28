@@ -19,6 +19,13 @@
 
 ## Log
 
+### 2026-04-28 — [ios] Trainer Today: swipe actions, empty state, mark-all-complete (T-M-02)
+- **Screen:** Trainer Today (T-M-02)
+- **iOS Change:** Rewrote `TodayView.swift` with state-driven `TodaySession` model. Added `.swipeActions`: leading = Complete (green), trailing = Reschedule (blue) + Cancel (red). Completed sessions collapse into a "COMPLETED" sub-section with undo swipe. Added empty state ("All caught up!" with calendar badge icon) when no pending sessions. Added "Mark all complete" header button with confirmation alert. "Remaining" stat tile updates dynamically as sessions are completed/cancelled. Added `RescheduleSessionSheet` with hour/minute wheel pickers.
+- **Android Status:** 🟡 Partial (swipe actions, empty state, mark-all not yet cloned)
+- **Files touched:** `ios/Trainer/Views/TodayView.swift`
+- **Notes:** Uses `withAnimation` for smooth state transitions. Cancel shows destructive confirmation alert. Reschedule sheet uses 15-min increments for minutes.
+
 ### 2026-04-28 — [ios] Progress: add Check-Ins tab (C-M-08)
 - **Screen:** Client Progress (C-M-08)
 - **iOS Change:** Added 5th "Check-Ins" tab to `ClientProgressView`. Side-by-side layout: Previous Week vs Current Week. Sections: Weight (with delta arrow + trend text), Measurements (7 rows with prev→curr deltas, green=improvement/red=opposite), Photos (before/after placeholders), Submit Check-In CTA with confirmation alert.
