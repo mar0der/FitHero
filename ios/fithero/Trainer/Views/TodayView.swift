@@ -388,6 +388,7 @@ struct TodayView: View {
     // MARK: - Actions
 
     private func completeSession(id: UUID) {
+        FHHaptics.success()
         if let index = sessions.firstIndex(where: { $0.id == id }) {
             sessions[index].isCompleted = true
             sessions[index].isNext = false
@@ -403,6 +404,7 @@ struct TodayView: View {
     }
 
     private func cancelSession(id: UUID) {
+        FHHaptics.error()
         withAnimation(.easeInOut(duration: 0.25)) {
             sessions.removeAll { $0.id == id }
             promoteNextSession()
@@ -416,6 +418,7 @@ struct TodayView: View {
     }
 
     private func markAllComplete() {
+        FHHaptics.success()
         withAnimation(.easeInOut(duration: 0.3)) {
             for index in sessions.indices {
                 sessions[index].isCompleted = true

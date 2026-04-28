@@ -60,8 +60,15 @@ struct ActiveWorkoutView: View {
             guard timerActive else { return }
             elapsedSeconds += 1
             if isResting {
-                if restTimeRemaining > 0 { restTimeRemaining -= 1 }
-                else { isResting = false }
+                if restTimeRemaining > 0 {
+                    restTimeRemaining -= 1
+                    if restTimeRemaining <= 3 && restTimeRemaining > 0 {
+                        FHHaptics.light()
+                    }
+                } else {
+                    FHHaptics.medium()
+                    isResting = false
+                }
             }
         }
         .sheet(isPresented: $showVideo, onDismiss: { player?.pause() }) {
@@ -389,15 +396,24 @@ struct ActiveWorkoutView: View {
             Spacer()
 
             HStack(spacing: 6) {
-                Button { restTimeRemaining = max(0, restTimeRemaining - 15) } label: {
+                Button {
+                    FHHaptics.light()
+                    restTimeRemaining = max(0, restTimeRemaining - 15)
+                } label: {
                     Text("−15").font(.system(size: 12, weight: .semibold)).foregroundStyle(FH.Colors.textMuted)
                         .frame(width: 42, height: 36).background(FH.Colors.surface2).clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                Button { isResting = false } label: {
+                Button {
+                    FHHaptics.medium()
+                    isResting = false
+                } label: {
                     Text("Skip").font(.system(size: 13, weight: .bold)).foregroundStyle(FH.Colors.primaryInk)
                         .frame(width: 52, height: 36).background(FH.Colors.primary).clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                Button { restTimeRemaining = min(300, restTimeRemaining + 15) } label: {
+                Button {
+                    FHHaptics.light()
+                    restTimeRemaining = min(300, restTimeRemaining + 15)
+                } label: {
                     Text("+15").font(.system(size: 12, weight: .semibold)).foregroundStyle(FH.Colors.textMuted)
                         .frame(width: 42, height: 36).background(FH.Colors.surface2).clipShape(RoundedRectangle(cornerRadius: 8))
                 }
@@ -431,10 +447,12 @@ struct ActiveWorkoutView: View {
         sets[activeIndex].isCompleted = true
 
         if sets.allSatisfy(\.isCompleted) {
-            // Exercise complete — tell parent
+            FHHaptics.heavy()
+            FHHaptics.success()
             timerActive = false
             onExerciseDone(elapsedSeconds)
         } else {
+            FHHaptics.medium()
             isResting = true
             restTimeRemaining = currentExercise.restSeconds
         }

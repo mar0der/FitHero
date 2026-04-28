@@ -133,6 +133,7 @@ struct ProfileSheet: View {
                 .tracking(1.2)
 
             Button {
+                FHHaptics.light()
                 showPayments = true
             } label: {
                 HStack(spacing: FH.Spacing.md) {
@@ -253,6 +254,7 @@ struct ProfileSheet: View {
 
     private var signOutButton: some View {
         Button {
+            FHHaptics.medium()
             dismiss()
             onSignOut()
         } label: {
@@ -305,6 +307,9 @@ struct ProfileToggleRow: View {
             Toggle("", isOn: $isOn)
                 .tint(FH.Colors.primary)
                 .labelsHidden()
+                .onChange(of: isOn) { _, _ in
+                    FHHaptics.selection()
+                }
         }
         .padding(FH.Spacing.md)
         .background(FH.Colors.surface)

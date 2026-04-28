@@ -3,6 +3,9 @@ import SwiftUI
 struct ClientDetailView: View {
     let client: ClientItem
     @State private var selectedTab = 0
+    @State private var showMessageSheet = false
+    @State private var showScheduleSheet = false
+    @State private var showAssignSheet = false
     @Environment(\.dismiss) private var dismiss
 
     let tabs = ["Overview", "Programs", "Progress", "Notes"]
@@ -28,6 +31,15 @@ struct ClientDetailView: View {
                 .padding(.horizontal, FH.Spacing.base)
                 .padding(.bottom, FH.Spacing.xxxl)
             }
+        }
+        .sheet(isPresented: $showMessageSheet) {
+            messageSheet
+        }
+        .sheet(isPresented: $showScheduleSheet) {
+            scheduleSheet
+        }
+        .sheet(isPresented: $showAssignSheet) {
+            assignSheet
         }
     }
 
@@ -95,16 +107,23 @@ struct ClientDetailView: View {
 
     private var actionButtons: some View {
         HStack(spacing: FH.Spacing.sm) {
-            actionButton(icon: "message.fill", label: "Message", color: FH.Colors.accent)
-            actionButton(icon: "calendar.badge.plus", label: "Schedule", color: FH.Colors.primary)
-            actionButton(icon: "doc.text.fill", label: "Assign", color: FH.Colors.warning)
+            actionButton(icon: "message.fill", label: "Message", color: FH.Colors.accent) {
+                FHHaptics.medium()
+                showMessageSheet = true
+            }
+            actionButton(icon: "calendar.badge.plus", label: "Schedule", color: FH.Colors.primary) {
+                FHHaptics.medium()
+                showScheduleSheet = true
+            }
+            actionButton(icon: "doc.text.fill", label: "Assign", color: FH.Colors.warning) {
+                FHHaptics.medium()
+                showAssignSheet = true
+            }
         }
     }
 
-    private func actionButton(icon: String, label: String, color: Color) -> some View {
-        Button {
-            // Action stub
-        } label: {
+    private func actionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             VStack(spacing: 6) {
                 ZStack {
                     RoundedRectangle(cornerRadius: FH.Radius.md)
@@ -121,6 +140,28 @@ struct ClientDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Sheets
+
+    private var messageSheet: some View {
+        MessagesView(
+            partnerName: client.name,
+            partnerInitial: client.initials,
+            isTrainerContext: true
+        )
+    }
+
+    private var scheduleSheet: some View {
+        ScheduleSessionSheet(clientName: client.firstName) { date, type, duration in
+            showScheduleSheet = false
+        }
+    }
+
+    private var assignSheet: some View {
+        AssignProgramSheet(clientName: client.firstName) { workout in
+            showAssignSheet = false
+        }
     }
 
     // MARK: - Segmented Control
@@ -513,6 +554,224 @@ struct ClientDetailView: View {
             .padding(.vertical, 5)
             .background(FH.Colors.surface2)
             .clipShape(Capsule())
+    }
+}
+
+// MARK: - Schedule Session Sheet
+
+struct ScheduleSessionSheet: View {
+    let clientName: String
+    let onConfirm: (Date, String, Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var selectedDate = Date()
+    @State private var selectedType = 0
+    @State private var selectedDuration = 60
+
+    let types = ["In-person", "Video call", "Check-in"]
+    let durations = [15, 30, 45, 60, 90]
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                FH.Colors.bg.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: FH.Spacing.xl) {
+                        VStack(spacing: FH.Spacing.md) {
+                            Text("Schedule with \(clientName)")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(FH.Colors.text)
+
+                            DatePicker(
+                                "Date & Time",
+                                selection: $selectedDate,
+                                in: Date()...
+                            )
+                            .datePickerStyle(.graphical)
+                            .colorMultiply(FH.Colors.primary)
+                        }
+
+                        VStack(alignment: .leading, spacing: FH.Spacing.md) {
+                            Text("SESSION TYPE")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(FH.Colors.textSubtle)
+                                .tracking(1.2)
+
+                            HStack(spacing: FH.Spacing.sm) {
+                                ForEach(Array(types.enumerated()), id: \.offset) { index, type in
+                                    Button {
+                                        FHHaptics.selection()
+                                        selectedType = index
+                                    } label: {
+                                        Text(type)
+                                            .font(.system(size: 14, weight: selectedType == index ? .semibold : .medium))
+                                            .foregroundStyle(selectedType == index ? FH.Colors.primaryInk : FH.Colors.textMuted)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(selectedType == index ? FH.Colors.primary : FH.Colors.surface)
+                                            .clipShape(Capsule())
+                                    }
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: FH.Spacing.md) {
+                            Text("DURATION")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(FH.Colors.textSubtle)
+                                .tracking(1.2)
+
+                            HStack(spacing: FH.Spacing.sm) {
+                                ForEach(durations, id: \.self) { minutes in
+                                    Button {
+                                        FHHaptics.selection()
+                                        selectedDuration = minutes
+                                    } label: {
+                                        Text("\(minutes)m")
+                                            .font(.system(size: 14, weight: selectedDuration == minutes ? .semibold : .medium))
+                                            .foregroundStyle(selectedDuration == minutes ? FH.Colors.primaryInk : FH.Colors.textMuted)
+                                            .padding(.horizontal, 14)
+                                            .padding(.vertical, 8)
+                                            .background(selectedDuration == minutes ? FH.Colors.primary : FH.Colors.surface)
+                                            .clipShape(Capsule())
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer()
+
+                        Button {
+                            FHHaptics.success()
+                            onConfirm(selectedDate, types[selectedType], selectedDuration)
+                        } label: {
+                            Text("Schedule Session")
+                        }
+                        .buttonStyle(FHPrimaryButtonStyle())
+                    }
+                    .padding(FH.Spacing.base)
+                    .padding(.bottom, FH.Spacing.xxxl)
+                }
+            }
+            .navigationTitle("New Session")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundStyle(FH.Colors.textMuted)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Assign Program Sheet
+
+struct AssignProgramSheet: View {
+    let clientName: String
+    let onConfirm: (Workout) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var selectedWorkout: Workout?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                FH.Colors.bg.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: FH.Spacing.xl) {
+                        VStack(spacing: FH.Spacing.md) {
+                            Text("Assign to \(clientName)")
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(FH.Colors.text)
+                            Text("Choose a workout from your library")
+                                .font(.system(size: 15))
+                                .foregroundStyle(FH.Colors.textMuted)
+                        }
+
+                        VStack(spacing: FH.Spacing.sm) {
+                            ForEach(SampleData.workoutLibrary) { workout in
+                                workoutRow(workout)
+                            }
+                        }
+
+                        Spacer()
+
+                        Button {
+                            if let workout = selectedWorkout {
+                                FHHaptics.success()
+                                onConfirm(workout)
+                            }
+                        } label: {
+                            Text(selectedWorkout == nil ? "Select a workout" : "Assign \(selectedWorkout!.name)")
+                        }
+                        .buttonStyle(FHPrimaryButtonStyle())
+                        .disabled(selectedWorkout == nil)
+                        .opacity(selectedWorkout == nil ? 0.5 : 1)
+                    }
+                    .padding(FH.Spacing.base)
+                    .padding(.bottom, FH.Spacing.xxxl)
+                }
+            }
+            .navigationTitle("Assign Program")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundStyle(FH.Colors.textMuted)
+                }
+            }
+        }
+    }
+
+    private func workoutRow(_ workout: Workout) -> some View {
+        let isSelected = selectedWorkout?.id == workout.id
+        return Button {
+            FHHaptics.selection()
+            selectedWorkout = workout
+        } label: {
+            HStack(spacing: FH.Spacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: FH.Radius.md)
+                        .fill(FH.Colors.primary.opacity(0.12))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "dumbbell.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(FH.Colors.primary)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(workout.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(FH.Colors.text)
+                    Text("\(workout.exercises.count) exercises · \(workout.estimatedMinutes) min")
+                        .font(.system(size: 13))
+                        .foregroundStyle(FH.Colors.textMuted)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(FH.Colors.success)
+                }
+            }
+            .padding(FH.Spacing.md)
+            .background(isSelected ? FH.Colors.surface2 : FH.Colors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: FH.Radius.lg)
+                    .stroke(isSelected ? FH.Colors.primary.opacity(0.4) : FH.Colors.border, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

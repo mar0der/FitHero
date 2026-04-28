@@ -45,6 +45,7 @@ struct ClientHomeView: View {
             }
             Spacer()
             Button {
+                FHHaptics.light()
                 showProfile = true
             } label: {
                 ZStack {
@@ -105,6 +106,7 @@ struct ClientHomeView: View {
             }
 
             Button {
+                FHHaptics.medium()
                 showWorkout = true
             } label: {
                 HStack {

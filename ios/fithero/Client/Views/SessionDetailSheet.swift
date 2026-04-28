@@ -4,7 +4,9 @@ struct SessionDetailSheet: View {
     let session: TrainingSession
     @Environment(\.dismiss) private var dismiss
     @State private var showReschedule = false
-    var onAddToCalendar: () -> Void
+    @State private var showCalendarAlert = false
+    @State private var calendarAlertTitle = ""
+    @State private var calendarAlertMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -34,6 +36,11 @@ struct SessionDetailSheet: View {
             }
             .sheet(isPresented: $showReschedule) {
                 RescheduleSheet(session: session)
+            }
+            .alert(calendarAlertTitle, isPresented: $showCalendarAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(calendarAlertMessage)
             }
         }
     }
@@ -86,7 +93,7 @@ struct SessionDetailSheet: View {
     private var actionsCard: some View {
         VStack(spacing: FH.Spacing.md) {
             Button {
-                onAddToCalendar()
+                addToCalendar()
             } label: {
                 HStack(spacing: FH.Spacing.sm) {
                     Image(systemName: "calendar.badge.plus")
@@ -148,6 +155,26 @@ struct SessionDetailSheet: View {
             }
 
             Spacer()
+        }
+    }
+
+    private func addToCalendar() {
+        FHHaptics.medium()
+        CalendarHelper.addSessionToCalendar(
+            title: "\(session.type.rawValue) with \(session.trainerName)",
+            startDate: session.date,
+            durationMinutes: session.durationMinutes,
+            location: session.location
+        ) { result in
+            switch result {
+            case .success:
+                calendarAlertTitle = "Added to Calendar"
+                calendarAlertMessage = "Your session has been added to your calendar."
+            case .failure(let error):
+                calendarAlertTitle = "Couldn't Add"
+                calendarAlertMessage = error.localizedDescription
+            }
+            showCalendarAlert = true
         }
     }
 

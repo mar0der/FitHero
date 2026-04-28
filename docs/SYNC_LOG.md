@@ -19,6 +19,19 @@
 
 ## Log
 
+### 2026-04-28 — [ios] Functional gaps: Messages, Calendar, ClientDetail, TrainerMessages, Photos, Haptics
+- **Screens:** C-M-10 (Messages), C-M-09 (Schedule), T-M-04 (ClientDetail), T-M-05 (TrainerMessages), C-M-08 (Photos), Cross-cutting (Haptics)
+- **iOS Change:**
+  1. **Messages send/attach** — `MessagesView.swift` now has state-driven message array. Send appends client message with timestamp. Photo picker (`PhotosPicker`) appends image-attachment bubble. Video call shows alert. Auto-scrolls to bottom. Reusable with `partnerName`/`partnerInitial`/`isTrainerContext` params.
+  2. **Add to Calendar** — `CalendarHelper.swift` wraps EventKit. Requests full calendar access (iOS 17+ API). Programmatically creates event with title, date, duration, location. Success/denial alerts in `ScheduleView` and `SessionDetailSheet`.
+  3. **ClientDetailView actions** — Message button opens chat sheet with client's name/initials. Schedule button opens `ScheduleSessionSheet` (date picker + type chips + duration chips). Assign button opens `AssignProgramSheet` (workout library from `SampleData` with selection checkmark).
+  4. **Trainer Messages** — Conversation rows are now tappable buttons with chevron. Tap clears unread badge and pushes to `MessagesView` sheet. `Conversation` model changed `unread` from `let` to `var`.
+  5. **Photos tab** — `PhotoViewer` sheet with `TabView` page style, swipe between photos, index dots, large SF Symbol placeholder. `AddPhotoSheet` now has tappable photo picker area (`PhotosPicker`) and functional Save that appends to state-driven `photos` array.
+  6. **Haptics** — New `FHHaptics.swift` helper (light/medium/heavy/success/error/selection). Applied: log set (medium), all sets complete (heavy+success), rest timer last 3s (light per tick), rest finish (medium), skip rest (medium), RPE pills (selection), Done workout (heavy+success), Start workout (medium), profile toggles (selection), sign out (medium), Today swipe complete (success), cancel (error), mark all (success), photo tap (medium), message send (medium).
+- **Android Status:** ❌ N/A (iOS only session)
+- **Files touched:** `ios/Client/Views/MessagesView.swift`, `ScheduleView.swift`, `SessionDetailSheet.swift`, `ClientProgressView.swift`, `ActiveWorkoutView.swift`, `WorkoutSummaryView.swift`, `ClientHomeView.swift`, `ProfileSheet.swift`, `Trainer/Views/TodayView.swift`, `ClientDetailView.swift`, `TrainerMessagesView.swift`, `Shared/Models/FHModels.swift`, `Shared/Helpers/CalendarHelper.swift`, `Shared/DesignSystem/FHHaptics.swift`
+- **Notes:** EventKit requires calendar permission on real device. Simulator may silently succeed. Haptics only felt on physical device.
+
 ### 2026-04-28 — [ios] Trainer Today: swipe actions, empty state, mark-all-complete (T-M-02)
 - **Screen:** Trainer Today (T-M-02)
 - **iOS Change:** Rewrote `TodayView.swift` with state-driven `TodaySession` model. Added `.swipeActions`: leading = Complete (green), trailing = Reschedule (blue) + Cancel (red). Completed sessions collapse into a "COMPLETED" sub-section with undo swipe. Added empty state ("All caught up!" with calendar badge icon) when no pending sessions. Added "Mark all complete" header button with confirmation alert. "Remaining" stat tile updates dynamically as sessions are completed/cancelled. Added `RescheduleSessionSheet` with hour/minute wheel pickers.

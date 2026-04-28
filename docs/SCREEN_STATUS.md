@@ -23,8 +23,8 @@
 | C-M-06 | **Active Workout Mode** | ✅ | ✅ | `ActiveWorkoutView.swift` | `ActiveWorkoutScreen.kt` | Set table, weight/reps steppers, rest timer with circular countdown, skip/adjust. |
 | C-M-07 | **Workout Summary** | ✅ | ✅ | `WorkoutSummaryView.swift` | `WorkoutSummaryScreen.kt` | Completion hero, stats grid, RPE 1–10 selector, session note, Send to coach / Done. |
 | C-M-08 | **Progress** | ✅ | ✅ | `ClientProgressView.swift` | `ProgressScreen.kt` | 5 tabs: Weight (chart+log), PRs, Body, Photos, Check-Ins. |
-| C-M-09 | **Schedule** | ✅ | ✅ | `ScheduleView.swift` | `ScheduleScreen.kt` | Session cards, detail sheet, reschedule sheet with duration chips. |
-| C-M-10 | **Messages** | ✅ | ✅ | `MessagesView.swift` | `MessagesScreen.kt` | Chat bubbles, input bar. Send/attach are stubs on both. |
+| C-M-09 | **Schedule** | ✅ | ✅ | `ScheduleView.swift` | `ScheduleScreen.kt` | Session cards, detail sheet, reschedule sheet. EventKit calendar integration (Add to Calendar). |
+| C-M-10 | **Messages** | ✅ | ✅ | `MessagesView.swift` | `MessagesScreen.kt` | Chat bubbles, input bar. Functional send, photo picker attachment, video call alert. |
 | C-M-11 | **Payments** | ✅ | ❌ | `PaymentsView.swift` | — | Active plan card, payment method row, payment history list. Reached from Profile → Billing. |
 | C-M-12 | **Profile** | ✅ | ✅ | `ProfileSheet.swift` | `ProfileSheet.kt` | Editable fields, toggles, support links, Sign Out → role picker. |
 
@@ -41,10 +41,10 @@
 | ID | Screen | iOS Status | Android Status | iOS File | Android File | Notes |
 |----|--------|-----------|----------------|----------|--------------|-------|
 | T-M-01 | **Sign In / Sign Up** | ✅ | ❌ | `TrainerAuthView.swift` | — | Trainer auth with sign-in and sign-up modes. Name, business, email, password fields. |
-| T-M-02 | **Today** | ✅ | ✅ | `TodayView.swift` | `TrainerTodayScreen.kt` | Sessions list with swipe-to-complete/reschedule/cancel, empty state, "Mark all complete", dynamic stats. |
+| T-M-02 | **Today** | ✅ | ✅ | `TodayView.swift` | `TrainerTodayScreen.kt` | Sessions list with swipe actions, empty state, mark-all-complete, dynamic stats, haptics. |
 | T-M-03 | **Clients** | ✅ | ✅ | `ClientsView.swift` | `TrainerClientsScreen.kt` | Search, filter pills, client rows with status. |
-| T-M-04 | **Client Mini-Profile** | ✅ | ✅ | `ClientDetailView.swift` | `ClientDetailScreen.kt` | Tap client row → detail. 4 tabs: Overview, Programs, Progress, Notes. |
-| T-M-05 | **Messages** | ✅ | ✅ | `TrainerMessagesView.swift` | `TrainerMessagesScreen.kt` | Conversation inbox with unread badges. |
+| T-M-04 | **Client Mini-Profile** | ✅ | ✅ | `ClientDetailView.swift` | `ClientDetailScreen.kt` | Tap client row → detail. 4 tabs. Action buttons: Message (→ chat), Schedule (→ picker), Assign (→ workout library). |
+| T-M-05 | **Messages** | ✅ | ✅ | `TrainerMessagesView.swift` | `TrainerMessagesScreen.kt` | Conversation inbox with unread badges. Tappable rows → chat sheet. |
 | T-M-06 | **Notifications Inbox** | ✅ | ✅ | `NotificationsView.swift` | `TrainerTodayScreen.kt` (sheet) | Sheet triggered from bell icon on Today tab. |
 | T-M-07 | **Settings** | ✅ | ✅ | `TrainerSettingsView.swift` | `TrainerSettingsScreen.kt` | Profile, preferences, support, Sign Out → role picker. |
 

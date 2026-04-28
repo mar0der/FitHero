@@ -3,7 +3,9 @@ import SwiftUI
 struct ScheduleView: View {
     let sessions = SampleData.upcomingSessions
     @State private var selectedSession: TrainingSession? = nil
-    @State private var showCalendarAdded = false
+    @State private var showCalendarAlert = false
+    @State private var calendarAlertTitle = ""
+    @State private var calendarAlertMessage = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,15 +28,12 @@ struct ScheduleView: View {
         }
         .background(FH.Colors.bg)
         .sheet(item: $selectedSession) { session in
-            SessionDetailSheet(
-                session: session,
-                onAddToCalendar: { showCalendarAdded = true }
-            )
+            SessionDetailSheet(session: session)
         }
-        .alert("Added to Calendar", isPresented: $showCalendarAdded) {
+        .alert(calendarAlertTitle, isPresented: $showCalendarAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("The session has been added to your calendar.")
+            Text(calendarAlertMessage)
         }
     }
 
@@ -139,8 +138,7 @@ struct ScheduleView: View {
                 if isNext {
                     HStack(spacing: FH.Spacing.sm) {
                         Button {
-                            selectedSession = session
-                            showCalendarAdded = true
+                            addToCalendar(session)
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "calendar.badge.plus")
@@ -184,6 +182,26 @@ struct ScheduleView: View {
             RoundedRectangle(cornerRadius: FH.Radius.lg)
                 .stroke(isNext ? FH.Colors.primary.opacity(0.3) : FH.Colors.border, lineWidth: 1)
         )
+    }
+
+    private func addToCalendar(_ session: TrainingSession) {
+        FHHaptics.medium()
+        CalendarHelper.addSessionToCalendar(
+            title: "\(session.type.rawValue) with \(session.trainerName)",
+            startDate: session.date,
+            durationMinutes: session.durationMinutes,
+            location: session.location
+        ) { result in
+            switch result {
+            case .success:
+                calendarAlertTitle = "Added to Calendar"
+                calendarAlertMessage = "Your \(session.type.rawValue.lowercased()) session has been added."
+            case .failure(let error):
+                calendarAlertTitle = "Couldn't Add"
+                calendarAlertMessage = error.localizedDescription
+            }
+            showCalendarAlert = true
+        }
     }
 
     private func sessionIconColor(_ type: TrainingSession.SessionType) -> Color {

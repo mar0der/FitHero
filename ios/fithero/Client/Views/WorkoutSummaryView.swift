@@ -122,6 +122,7 @@ struct WorkoutSummaryView: View {
             LazyVGrid(columns: Array(repeating: .init(.flexible(), spacing: FH.Spacing.sm), count: 5), spacing: FH.Spacing.sm) {
                 ForEach(1...10, id: \.self) { level in
                     Button {
+                        FHHaptics.selection()
                         withAnimation(.easeInOut(duration: 0.12)) { rpe = level }
                     } label: {
                         Text("\(level)")
@@ -208,7 +209,7 @@ struct WorkoutSummaryView: View {
             Divider().background(FH.Colors.border)
             HStack(spacing: FH.Spacing.sm) {
                 Button {
-                    // Send to coach — stub
+                    FHHaptics.medium()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "paperplane.fill")
@@ -223,7 +224,11 @@ struct WorkoutSummaryView: View {
                     .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
                 }
 
-                Button(action: onDone) {
+                Button {
+                    FHHaptics.heavy()
+                    FHHaptics.success()
+                    onDone()
+                } label: {
                     Text("Done")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(FH.Colors.primaryInk)

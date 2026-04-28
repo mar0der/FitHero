@@ -68,6 +68,7 @@ struct ChatMessage: Identifiable {
     let isFromTrainer: Bool
     let text: String
     let timestamp: Date
+    var isImageAttachment: Bool = false
 }
 
 struct WeightEntry: Identifiable {

@@ -1,12 +1,13 @@
 import SwiftUI
 
 struct TrainerMessagesView: View {
-    let conversations = [
+    @State private var conversations: [Conversation] = [
         Conversation(name: "Alex Johnson", preview: "Thanks for the program update! Ready for tomorrow.", time: "10m", unread: 2, initials: "AJ"),
         Conversation(name: "Marco Rossi", preview: "Can we reschedule Thursday to Friday?", time: "1h", unread: 1, initials: "MR"),
         Conversation(name: "Erika Szabo", preview: "Hit a new PR on deadlifts today 🎉", time: "3h", unread: 0, initials: "ES"),
         Conversation(name: "Sam Taylor", preview: "I'm back from vacation, ready to start Monday.", time: "2d", unread: 0, initials: "ST"),
     ]
+    @State private var selectedConversation: Conversation?
 
     var body: some View {
         ZStack {
@@ -20,6 +21,13 @@ struct TrainerMessagesView: View {
                 .padding(.horizontal, FH.Spacing.base)
                 .padding(.bottom, FH.Spacing.xxxl)
             }
+        }
+        .sheet(item: $selectedConversation) { conv in
+            MessagesView(
+                partnerName: conv.name,
+                partnerInitial: conv.initials,
+                isTrainerContext: true
+            )
         }
     }
 
@@ -44,8 +52,17 @@ struct TrainerMessagesView: View {
 
     private var conversationList: some View {
         VStack(spacing: FH.Spacing.sm) {
-            ForEach(conversations) { conv in
-                conversationRow(conv)
+            ForEach($conversations) { $conv in
+                Button {
+                    FHHaptics.medium()
+                    if conv.unread > 0 {
+                        conv.unread = 0
+                    }
+                    selectedConversation = conv
+                } label: {
+                    conversationRow(conv)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -90,6 +107,10 @@ struct TrainerMessagesView: View {
             }
 
             Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(FH.Colors.textSubtle)
         }
         .padding(FH.Spacing.md)
         .background(FH.Colors.surface)
@@ -108,7 +129,7 @@ struct Conversation: Identifiable {
     let name: String
     let preview: String
     let time: String
-    let unread: Int
+    var unread: Int
     let initials: String
 }
 

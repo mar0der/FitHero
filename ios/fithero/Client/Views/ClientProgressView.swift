@@ -1,13 +1,16 @@
 import SwiftUI
 import Charts
+import PhotosUI
 
 struct ClientProgressView: View {
     @State private var selectedTab = 0
     @State private var showAddPhoto = false
     @State private var showSubmitCheckIn = false
+    @State private var showPhotoViewer = false
+    @State private var viewerSelectedIndex = 0
+    @State private var photos: [ProgressPhoto] = SampleData.progressPhotos
     let weightHistory = SampleData.weightHistory
     let personalRecords = SampleData.personalRecords
-    let progressPhotos = SampleData.progressPhotos
 
     var body: some View {
         VStack(spacing: 0) {
@@ -30,7 +33,12 @@ struct ClientProgressView: View {
         }
         .background(FH.Colors.bg)
         .sheet(isPresented: $showAddPhoto) {
-            AddPhotoSheet()
+            AddPhotoSheet(onPhotoSelected: { photo in
+                photos.append(photo)
+            })
+        }
+        .sheet(isPresented: $showPhotoViewer) {
+            PhotoViewer(photos: photos, selectedIndex: $viewerSelectedIndex)
         }
     }
 
@@ -270,7 +278,7 @@ struct ClientProgressView: View {
             HStack(spacing: FH.Spacing.md) {
                 photoPlaceholder(
                     label: "Start",
-                    date: progressPhotos.first?.date,
+                    date: photos.first?.date,
                     icon: "camera",
                     color: FH.Colors.textSubtle
                 )
@@ -289,8 +297,15 @@ struct ClientProgressView: View {
                     .tracking(1.2)
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 120), spacing: FH.Spacing.md)], spacing: FH.Spacing.md) {
-                    ForEach(progressPhotos) { photo in
-                        photoCard(photo)
+                    ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
+                        Button {
+                            FHHaptics.medium()
+                            viewerSelectedIndex = index
+                            showPhotoViewer = true
+                        } label: {
+                            photoCard(photo)
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     Button {
@@ -568,10 +583,86 @@ struct ClientProgressView: View {
     }
 }
 
+struct PhotoViewer: View {
+    let photos: [ProgressPhoto]
+    @Binding var selectedIndex: Int
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            FH.Colors.bg.ignoresSafeArea()
+
+            TabView(selection: $selectedIndex) {
+                ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
+                    VStack(spacing: FH.Spacing.lg) {
+                        Spacer()
+
+                        ZStack {
+                            RoundedRectangle(cornerRadius: FH.Radius.xl)
+                                .fill(photoColor(photo.colorName).opacity(0.15))
+                            Image(systemName: photo.sfSymbol)
+                                .font(.system(size: 80))
+                                .foregroundStyle(photoColor(photo.colorName))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 400)
+                        .padding(.horizontal, FH.Spacing.base)
+
+                        VStack(spacing: FH.Spacing.sm) {
+                            Text(photo.label)
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(FH.Colors.text)
+                            Text(photo.date.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
+                                .font(.system(size: 15))
+                                .foregroundStyle(FH.Colors.textMuted)
+                        }
+
+                        Spacer()
+                    }
+                    .tag(index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        FHHaptics.light()
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(FH.Colors.textSubtle)
+                    }
+                }
+                .padding(.horizontal, FH.Spacing.base)
+                .padding(.top, FH.Spacing.lg)
+
+                Spacer()
+            }
+        }
+    }
+
+    private func photoColor(_ name: String) -> Color {
+        switch name {
+        case "accent": return FH.Colors.accent
+        case "primary": return FH.Colors.primary
+        case "warning": return FH.Colors.warning
+        case "success": return FH.Colors.success
+        default: return FH.Colors.primary
+        }
+    }
+}
+
 struct AddPhotoSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedLabel = "Progress"
+    @State private var showPhotoPicker = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
     let labels = ["Progress", "Front", "Back", "Side", "Flexed"]
+    let onPhotoSelected: ((ProgressPhoto) -> Void)?
 
     var body: some View {
         NavigationStack {
@@ -579,23 +670,29 @@ struct AddPhotoSheet: View {
                 FH.Colors.bg.ignoresSafeArea()
 
                 VStack(spacing: FH.Spacing.xl) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: FH.Radius.lg)
-                            .fill(FH.Colors.surface)
-                            .frame(height: 300)
-                        VStack(spacing: FH.Spacing.md) {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 48))
-                                .foregroundStyle(FH.Colors.primary)
-                            Text("Take or select a photo")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(FH.Colors.textMuted)
+                    Button {
+                        FHHaptics.medium()
+                        showPhotoPicker = true
+                    } label: {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: FH.Radius.lg)
+                                .fill(FH.Colors.surface)
+                                .frame(height: 300)
+                            VStack(spacing: FH.Spacing.md) {
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(FH.Colors.primary)
+                                Text("Tap to select a photo")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundStyle(FH.Colors.textMuted)
+                            }
                         }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: FH.Radius.lg)
+                                .stroke(FH.Colors.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [8, 6]))
+                        )
                     }
-                    .overlay(
-                        RoundedRectangle(cornerRadius: FH.Radius.lg)
-                            .stroke(FH.Colors.primary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [8, 6]))
-                    )
+                    .buttonStyle(.plain)
 
                     VStack(alignment: .leading, spacing: FH.Spacing.md) {
                         Text("PHOTO LABEL")
@@ -606,6 +703,7 @@ struct AddPhotoSheet: View {
                         HStack(spacing: FH.Spacing.sm) {
                             ForEach(labels, id: \.self) { label in
                                 Button {
+                                    FHHaptics.selection()
                                     selectedLabel = label
                                 } label: {
                                     Text(label)
@@ -623,6 +721,14 @@ struct AddPhotoSheet: View {
                     Spacer()
 
                     Button {
+                        FHHaptics.success()
+                        let newPhoto = ProgressPhoto(
+                            date: Date(),
+                            label: selectedLabel,
+                            sfSymbol: "figure.strengthtraining.traditional",
+                            colorName: "primary"
+                        )
+                        onPhotoSelected?(newPhoto)
                         dismiss()
                     } label: {
                         Text("Save Photo")
@@ -647,6 +753,7 @@ struct AddPhotoSheet: View {
                     }
                 }
             }
+            .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotoItem, matching: .images)
         }
     }
 }
