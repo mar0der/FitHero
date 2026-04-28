@@ -12,8 +12,13 @@ struct MessagesView: View {
     @State private var showVideoCallAlert = false
     @State private var showPhotoPicker = false
     @State private var selectedPhoto: PhotosPickerItem?
-    @State private var previewImageData: Data?
+    @State private var showImagePreview = false
+    @State private var previewStartIndex = 0
     @FocusState private var isInputFocused: Bool
+
+    private var imageMessages: [ChatMessage] {
+        messages.filter { $0.imageData != nil }
+    }
 
     init(partnerName: String? = nil, partnerInitial: String? = nil, isTrainerContext: Bool = false, onBack: (() -> Void)? = nil) {
         self.partnerName = partnerName ?? SampleData.trainerName
@@ -34,8 +39,12 @@ struct MessagesView: View {
             }
             .background(FH.Colors.bg)
 
-            if previewImageData != nil {
-                ChatImagePreview(imageData: $previewImageData)
+            if showImagePreview {
+                ChatImageGallery(
+                    imageMessages: imageMessages,
+                    startIndex: previewStartIndex,
+                    onDismiss: { showImagePreview = false }
+                )
             }
         }
         .alert("Video Call", isPresented: $showVideoCallAlert) {
@@ -160,7 +169,7 @@ struct MessagesView: View {
 
                 VStack(alignment: isTrainer ? .leading : .trailing, spacing: 4) {
                     if let imageData = message.imageData, let uiImage = UIImage(data: imageData) {
-                        chatImageBubble(uiImage: uiImage)
+                        chatImageBubble(uiImage: uiImage, message: message)
                     } else {
                         Text(message.text)
                             .font(.system(size: 15))
@@ -181,7 +190,7 @@ struct MessagesView: View {
         }
     }
 
-    private func chatImageBubble(uiImage: UIImage) -> some View {
+    private func chatImageBubble(uiImage: UIImage, message: ChatMessage) -> some View {
         Image(uiImage: uiImage)
             .resizable()
             .scaledToFill()
@@ -194,8 +203,9 @@ struct MessagesView: View {
             .contentShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
             .onTapGesture {
                 FHHaptics.medium()
-                if let data = uiImage.jpegData(compressionQuality: 0.9) {
-                    previewImageData = data
+                if let index = imageMessages.firstIndex(where: { $0.id == message.id }) {
+                    previewStartIndex = index
+                    showImagePreview = true
                 }
             }
     }
@@ -284,99 +294,163 @@ struct MessagesView: View {
     }
 }
 
-// MARK: - Full-Screen Image Preview with Zoom/Pan
+// MARK: - Full-Screen Image Gallery with Swipe & Zoom
 
-struct ChatImagePreview: View {
-    @Binding var imageData: Data?
+struct ChatImageGallery: View {
+    let imageMessages: [ChatMessage]
+    let startIndex: Int
+    let onDismiss: () -> Void
 
-    @State private var scale: CGFloat = 1.0
-    @State private var lastScale: CGFloat = 1.0
-    @State private var offset: CGSize = .zero
-    @State private var lastOffset: CGSize = .zero
+    @State private var selectedIndex: Int
+    @State private var pageScales: [CGFloat]
+    @State private var pageOffsets: [CGSize]
+    @State private var dismissProgress: CGFloat = 0
+    @State private var isDragging = false
+
+    init(imageMessages: [ChatMessage], startIndex: Int, onDismiss: @escaping () -> Void) {
+        self.imageMessages = imageMessages
+        self.startIndex = startIndex
+        self.onDismiss = onDismiss
+        _selectedIndex = State(initialValue: startIndex)
+        _pageScales = State(initialValue: Array(repeating: 1.0, count: imageMessages.count))
+        _pageOffsets = State(initialValue: Array(repeating: .zero, count: imageMessages.count))
+    }
+
+    private var currentScale: CGFloat { pageScales[selectedIndex] }
+    private var isZoomed: Bool { currentScale > 1.05 }
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.95)
                 .ignoresSafeArea()
-                .onTapGesture {
-                    dismiss()
-                }
+                .opacity(1.0 - abs(dismissProgress) * 0.6)
 
-            if let imageData, let uiImage = UIImage(data: imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .scaleEffect(scale)
-                    .offset(offset)
-                    .gesture(
-                        MagnificationGesture()
-                            .onChanged { value in
-                                let delta = value / lastScale
-                                lastScale = value
-                                scale = min(max(scale * delta, 1.0), 4.0)
-                            }
-                            .onEnded { _ in
-                                lastScale = 1.0
-                                if scale < 1.0 {
-                                    withAnimation(.easeOut(duration: 0.2)) {
-                                        scale = 1.0
-                                        offset = .zero
-                                        lastOffset = .zero
-                                    }
-                                }
-                            }
-                    )
-                    .simultaneousGesture(
-                        DragGesture()
-                            .onChanged { value in
-                                if scale > 1.0 {
-                                    offset = CGSize(
-                                        width: lastOffset.width + value.translation.width,
-                                        height: lastOffset.height + value.translation.height
-                                    )
-                                }
-                            }
-                            .onEnded { _ in
-                                lastOffset = offset
-                            }
-                    )
-                    .onTapGesture(count: 2) {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            if scale > 1.0 {
-                                scale = 1.0
-                                offset = .zero
-                                lastOffset = .zero
-                            } else {
-                                scale = 2.5
-                            }
-                        }
+            TabView(selection: $selectedIndex) {
+                ForEach(Array(imageMessages.enumerated()), id: \.element.id) { index, message in
+                    if let data = message.imageData, let uiImage = UIImage(data: data) {
+                        zoomableImagePage(
+                            uiImage: uiImage,
+                            index: index
+                        )
                     }
+                }
             }
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
+            .offset(y: dismissProgress * 300)
+            .scaleEffect(1.0 - abs(dismissProgress) * 0.1)
+            .disabled(isDragging)
 
+            // Top bar
             VStack {
                 HStack {
+                    Text("\(selectedIndex + 1) of \(imageMessages.count)")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.8))
+
                     Spacer()
+
                     Button {
-                        dismiss()
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            onDismiss()
+                        }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 28))
                             .foregroundStyle(.white.opacity(0.8))
                     }
-                    .padding(.horizontal, FH.Spacing.base)
-                    .padding(.top, FH.Spacing.lg)
                 }
+                .padding(.horizontal, FH.Spacing.base)
+                .padding(.top, FH.Spacing.lg)
+
                 Spacer()
             }
+            .opacity(1.0 - abs(dismissProgress) * 2)
         }
     }
 
-    private func dismiss() {
-        withAnimation(.easeOut(duration: 0.2)) {
-            imageData = nil
-            scale = 1.0
-            offset = .zero
-            lastOffset = .zero
+    private func zoomableImagePage(uiImage: UIImage, index: Int) -> some View {
+        GeometryReader { geo in
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFit()
+                .scaleEffect(pageScales[index])
+                .offset(pageOffsets[index])
+                .frame(width: geo.size.width, height: geo.size.height)
+                .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                .simultaneousGesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            let newScale = min(max(value, 1.0), 4.0)
+                            pageScales[index] = newScale
+                        }
+                        .onEnded { _ in
+                            if pageScales[index] < 1.05 {
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    pageScales[index] = 1.0
+                                    pageOffsets[index] = .zero
+                                }
+                            }
+                        }
+                )
+                .simultaneousGesture(
+                    DragGesture()
+                        .onChanged { value in
+                            if pageScales[index] > 1.05 {
+                                pageOffsets[index] = CGSize(
+                                    width: value.translation.width,
+                                    height: value.translation.height
+                                )
+                            } else {
+                                isDragging = true
+                                dismissProgress = value.translation.height / geo.size.height
+                            }
+                        }
+                        .onEnded { value in
+                            isDragging = false
+                            if pageScales[index] > 1.05 {
+                                let velocity = CGSize(
+                                    width: value.predictedEndTranslation.width - value.translation.width,
+                                    height: value.predictedEndTranslation.height - value.translation.height
+                                )
+                                let magnitude = sqrt(velocity.width * velocity.width + velocity.height * velocity.height)
+                                if magnitude > 800 || abs(pageOffsets[index].height) > geo.size.height * 0.4 {
+                                    withAnimation(.easeOut(duration: 0.2)) {
+                                        pageScales[index] = 1.0
+                                        pageOffsets[index] = .zero
+                                    }
+                                } else {
+                                    withAnimation(.easeOut(duration: 0.3)) {
+                                        pageOffsets[index] = .zero
+                                    }
+                                }
+                            } else {
+                                if value.translation.height > 120 || (value.translation.height > 40 && value.velocity.height > 500) {
+                                    withAnimation(.easeOut(duration: 0.25)) {
+                                        dismissProgress = 1.0
+                                    }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                        onDismiss()
+                                    }
+                                } else {
+                                    withAnimation(.easeOut(duration: 0.25)) {
+                                        dismissProgress = 0
+                                    }
+                                }
+                            }
+                        }
+                )
+                .onTapGesture(count: 2) {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        if pageScales[index] > 1.05 {
+                            pageScales[index] = 1.0
+                            pageOffsets[index] = .zero
+                        } else {
+                            pageScales[index] = 2.5
+                        }
+                    }
+                }
+                .tag(index)
         }
     }
 }
