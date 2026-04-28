@@ -8,6 +8,7 @@ struct ClientProgressView: View {
     @State private var showSubmitCheckIn = false
     @State private var showPhotoViewer = false
     @State private var viewerSelectedIndex = 0
+    @State private var selectedExercise: Exercise? = nil
     @State private var photos: [ProgressPhoto] = SampleData.progressPhotos
     let weightHistory = SampleData.weightHistory
     let personalRecords = SampleData.personalRecords
@@ -39,6 +40,9 @@ struct ClientProgressView: View {
         }
         .sheet(isPresented: $showPhotoViewer) {
             PhotoViewer(photos: photos, selectedIndex: $viewerSelectedIndex)
+        }
+        .sheet(item: $selectedExercise) { exercise in
+            ExerciseDetailView(exercise: exercise)
         }
     }
 
@@ -226,33 +230,46 @@ struct ClientProgressView: View {
     private var prsSection: some View {
         VStack(spacing: FH.Spacing.md) {
             ForEach(personalRecords) { pr in
-                HStack(spacing: FH.Spacing.base) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: FH.Radius.md)
-                            .fill(FH.Colors.warning.opacity(0.12))
-                            .frame(width: 48, height: 48)
-                        Image(systemName: "trophy.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(FH.Colors.warning)
+                let matchingExercise = SampleData.exerciseLibrary.first { $0.name == pr.exerciseName }
+                Button {
+                    FHHaptics.selection()
+                    if let ex = matchingExercise {
+                        selectedExercise = ex
                     }
+                } label: {
+                    HStack(spacing: FH.Spacing.base) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: FH.Radius.md)
+                                .fill(FH.Colors.warning.opacity(0.12))
+                                .frame(width: 48, height: 48)
+                            Image(systemName: matchingExercise?.sfSymbol ?? "trophy.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(FH.Colors.warning)
+                        }
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(pr.exerciseName)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(FH.Colors.text)
-                        Text(pr.date.formatted(.dateTime.month(.abbreviated).day(.defaultDigits).year()))
-                            .font(.system(size: 13))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(pr.exerciseName)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(FH.Colors.text)
+                            Text(pr.date.formatted(.dateTime.month(.abbreviated).day(.defaultDigits).year()))
+                                .font(.system(size: 13))
+                                .foregroundStyle(FH.Colors.textSubtle)
+                        }
+
+                        Spacer()
+
+                        Text(pr.value)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(FH.Colors.primary)
+                            .monospacedDigit()
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(FH.Colors.textSubtle)
                     }
-
-                    Spacer()
-
-                    Text(pr.value)
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(FH.Colors.primary)
-                        .monospacedDigit()
+                    .fhCard()
                 }
-                .fhCard()
+                .buttonStyle(.plain)
             }
         }
     }

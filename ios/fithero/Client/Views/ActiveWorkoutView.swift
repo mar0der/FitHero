@@ -17,6 +17,7 @@ struct ActiveWorkoutView: View {
     @State private var timerActive = true
     @State private var showVideo = false
     @State private var player: AVPlayer? = nil
+    @State private var showExerciseDetail = false
 
     init(
         workout: Workout,
@@ -166,31 +167,44 @@ struct ActiveWorkoutView: View {
     // MARK: - Exercise header
 
     private var exerciseHeader: some View {
-        HStack(alignment: .center, spacing: FH.Spacing.md) {
-            ZStack {
-                RoundedRectangle(cornerRadius: FH.Radius.md)
-                    .fill(FH.Colors.primary.opacity(0.1))
-                    .frame(width: 44, height: 44)
-                Image(systemName: currentExercise.sfSymbol)
-                    .font(.system(size: 20))
-                    .foregroundStyle(FH.Colors.primary)
-                    .symbolRenderingMode(.hierarchical)
-            }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(currentExercise.name)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(FH.Colors.text)
-                    .lineLimit(1)
-                HStack(spacing: 8) {
-                    chip("\(currentExercise.targetSets) sets")
-                    chip("\(currentExercise.targetReps) reps")
-                    chip("\(currentExercise.restSeconds)s rest")
+        Button {
+            FHHaptics.selection()
+            showExerciseDetail = true
+        } label: {
+            HStack(alignment: .center, spacing: FH.Spacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: FH.Radius.md)
+                        .fill(FH.Colors.primary.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: currentExercise.sfSymbol)
+                        .font(.system(size: 20))
+                        .foregroundStyle(FH.Colors.primary)
+                        .symbolRenderingMode(.hierarchical)
                 }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(currentExercise.name)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(FH.Colors.text)
+                        .lineLimit(1)
+                    HStack(spacing: 8) {
+                        chip("\(currentExercise.targetSets) sets")
+                        chip("\(currentExercise.targetReps) reps")
+                        chip("\(currentExercise.restSeconds)s rest")
+                    }
+                }
+                Spacer(minLength: 0)
+
+                Image(systemName: "info.circle")
+                    .font(.system(size: 16))
+                    .foregroundStyle(FH.Colors.textSubtle)
             }
-            Spacer(minLength: 0)
+            .padding(.top, FH.Spacing.md)
+            .padding(.bottom, FH.Spacing.sm)
         }
-        .padding(.top, FH.Spacing.md)
-        .padding(.bottom, FH.Spacing.sm)
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showExerciseDetail) {
+            ExerciseDetailView(exercise: currentExercise)
+        }
     }
 
     private func chip(_ text: String) -> some View {

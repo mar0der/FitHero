@@ -6,6 +6,8 @@ struct WorkoutReadView: View {
     let onSelectExercise: (Int) -> Void
     let onDismiss: () -> Void
 
+    @State private var selectedExercise: Exercise? = nil
+
     private var doneCount: Int { completedExercises.count }
     private var totalCount: Int { workout.exercises.count }
     private var progress: Double { Double(doneCount) / Double(totalCount) }
@@ -31,6 +33,9 @@ struct WorkoutReadView: View {
             bottomBar
         }
         .background(FH.Colors.bg)
+        .sheet(item: $selectedExercise) { exercise in
+            ExerciseDetailView(exercise: exercise)
+        }
     }
 
     // MARK: - Top bar
@@ -223,11 +228,18 @@ struct WorkoutReadView: View {
                     .padding(.vertical, 4)
                     .background(FH.Colors.primary)
                     .clipShape(Capsule())
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
+                }
+
+                // Info button
+                Button {
+                    FHHaptics.selection()
+                    selectedExercise = exercise
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 16))
                         .foregroundStyle(FH.Colors.textSubtle)
                 }
+                .buttonStyle(.plain)
             }
             .padding(FH.Spacing.md)
             .background(FH.Colors.surface)

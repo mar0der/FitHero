@@ -27,6 +27,8 @@
 | C-M-10 | **Messages** | ✅ | ✅ | `MessagesView.swift` | `MessagesScreen.kt` | Chat bubbles, input bar. Functional send, photo picker attachment, video call alert. |
 | C-M-11 | **Payments** | ✅ | ❌ | `PaymentsView.swift` | — | Active plan card, payment method row, payment history list. Reached from Profile → Billing. |
 | C-M-12 | **Profile** | ✅ | ✅ | `ProfileSheet.swift` | `ProfileSheet.kt` | Editable fields, toggles, support links, Sign Out → role picker. |
+| C-M-13 | **Exercise Detail** | ✅ | ❌ | `ExerciseDetailView.swift` | — | Exercise info, muscle groups, equipment, instructions, PR highlight, recent set history. Reached from workout rows, active header, or PRs. |
+| C-M-14 | **Workout History** | ✅ | ❌ | `WorkoutHistoryView.swift` | — | List of completed workouts with date, duration, RPE, stats. Detail sheet per session. Reached from Profile → Activity. |
 
 ### Client Mobile — Out of Scope
 
@@ -82,10 +84,10 @@
 
 | Surface | Screens | iOS ✅ | Android ✅ | ❌ Both | 🚫 |
 |---------|---------|--------|-----------|---------|-----|
-| Client Mobile | 12 | 12 | 8 | 0 | 1 |
+| Client Mobile | 14 | 14 | 8 | 0 | 1 |
 | Trainer Mobile | 7 | 7 | 6 | 0 | 1 |
 | Trainer Web | 16 | 0 | 0 | 16 | 0 |
-| **TOTAL** | **35** | **19** | **14** | **14** | **2** |
+| **TOTAL** | **37** | **21** | **14** | **16** | **2** |
 
 ---
 

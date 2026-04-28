@@ -11,11 +11,12 @@ struct MessagesView: View {
     @State private var inputText = ""
     @State private var showVideoCallAlert = false
     @State private var showPhotoPicker = false
-    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var showImageGallery = false
     @State private var galleryStartIndex = 0
     @State private var showSendPreview = false
-    @State private var pendingImageData: Data?
+    @State private var pendingImages: [UIImage] = []
+    @State private var previewSelectedIndex = 0
     @State private var pendingCaption = ""
     @FocusState private var isInputFocused: Bool
 
@@ -57,17 +58,18 @@ struct MessagesView: View {
         } message: {
             Text("Starting video call with \(partnerName)...")
         }
-        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhoto, matching: .images)
-        .onChange(of: selectedPhoto) { _, newItem in
-            guard let newItem else { return }
-            Task { await loadImageForPreview(from: newItem) }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedPhotos, matching: .images)
+        .onChange(of: selectedPhotos) { _, newItems in
+            guard !newItems.isEmpty else { return }
+            Task { await loadImagesForPreview(from: newItems) }
         }
         .sheet(isPresented: $showSendPreview) {
             ImageSendPreview(
-                imageData: pendingImageData,
+                images: pendingImages,
+                selectedIndex: $previewSelectedIndex,
                 caption: $pendingCaption,
-                onSend: sendPendingImage,
-                onCancel: cancelPendingImage
+                onSend: sendPendingImages,
+                onCancel: cancelPendingImages
             )
         }
     }
@@ -313,44 +315,67 @@ struct MessagesView: View {
         }
     }
 
-    private func loadImageForPreview(from item: PhotosPickerItem) async {
-        guard let data = try? await item.loadTransferable(type: Data.self),
-              let image = UIImage(data: data),
-              let jpegData = image.jpegData(compressionQuality: 0.85) else { return }
+    private func loadImagesForPreview(from items: [PhotosPickerItem]) async {
+        var loaded: [UIImage] = []
+        for item in items {
+            if let data = try? await item.loadTransferable(type: Data.self),
+               let image = UIImage(data: data) {
+                loaded.append(image)
+            }
+        }
 
         await MainActor.run {
-            pendingImageData = jpegData
+            guard !loaded.isEmpty else { return }
+            pendingImages = loaded
+            previewSelectedIndex = 0
             pendingCaption = ""
             showSendPreview = true
-            selectedPhoto = nil
+            selectedPhotos = []
         }
     }
 
-    private func sendPendingImage() {
-        guard let imageData = pendingImageData else { return }
+    private func sendPendingImages() {
+        guard !pendingImages.isEmpty else { return }
         FHHaptics.medium()
 
         let caption = pendingCaption.trimmingCharacters(in: .whitespaces)
-        let newMessage = ChatMessage(
-            senderName: isTrainerContext ? partnerName : SampleData.clientName,
-            isFromTrainer: isTrainerContext,
-            text: caption,
-            timestamp: Date(),
-            isImageAttachment: true,
-            imageData: imageData
-        )
 
-        withAnimation(.easeOut(duration: 0.2)) {
-            messages.append(newMessage)
+        // Send each image as its own message (no caption)
+        for image in pendingImages {
+            guard let jpegData = image.jpegData(compressionQuality: 0.85) else { continue }
+            let imageMessage = ChatMessage(
+                senderName: isTrainerContext ? partnerName : SampleData.clientName,
+                isFromTrainer: isTrainerContext,
+                text: "",
+                timestamp: Date(),
+                isImageAttachment: true,
+                imageData: jpegData
+            )
+            messages.append(imageMessage)
         }
 
-        pendingImageData = nil
+        // Send caption as a separate text message if provided
+        if !caption.isEmpty {
+            let textMessage = ChatMessage(
+                senderName: isTrainerContext ? partnerName : SampleData.clientName,
+                isFromTrainer: isTrainerContext,
+                text: caption,
+                timestamp: Date(),
+                isImageAttachment: false,
+                imageData: nil
+            )
+            messages.append(textMessage)
+        }
+
+        pendingImages = []
+        previewSelectedIndex = 0
         pendingCaption = ""
         showSendPreview = false
     }
 
-    private func cancelPendingImage() {
-        pendingImageData = nil
+    private func cancelPendingImages() {
+        pendingImages = []
+        previewSelectedIndex = 0
         pendingCaption = ""
         showSendPreview = false
     }
@@ -359,7 +384,8 @@ struct MessagesView: View {
 // MARK: - Image Send Preview Sheet
 
 struct ImageSendPreview: View {
-    let imageData: Data?
+    let images: [UIImage]
+    @Binding var selectedIndex: Int
     @Binding var caption: String
     let onSend: () -> Void
     let onCancel: () -> Void
@@ -370,8 +396,9 @@ struct ImageSendPreview: View {
             ZStack {
                 FH.Colors.bg.ignoresSafeArea()
 
-                VStack(spacing: FH.Spacing.xl) {
-                    if let data = imageData, let uiImage = UIImage(data: data) {
+                VStack(spacing: FH.Spacing.lg) {
+                    // Main preview
+                    if let uiImage = images[safe: selectedIndex] {
                         Image(uiImage: uiImage)
                             .resizable()
                             .scaledToFit()
@@ -383,6 +410,33 @@ struct ImageSendPreview: View {
                             .padding(.horizontal, FH.Spacing.base)
                     }
 
+                    // Thumbnail strip (only if multiple)
+                    if images.count > 1 {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: FH.Spacing.sm) {
+                                ForEach(Array(images.enumerated()), id: \.offset) { index, image in
+                                    Button {
+                                        FHHaptics.selection()
+                                        selectedIndex = index
+                                    } label: {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 64, height: 64)
+                                            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.md))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: FH.Radius.md)
+                                                    .stroke(selectedIndex == index ? FH.Colors.primary : FH.Colors.border, lineWidth: selectedIndex == index ? 2 : 1)
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, FH.Spacing.base)
+                        }
+                    }
+
+                    // Caption + Send
                     HStack(spacing: FH.Spacing.md) {
                         TextField("Add a caption...", text: $caption, axis: .vertical)
                             .font(.system(size: 15))
@@ -412,7 +466,7 @@ struct ImageSendPreview: View {
                 }
                 .padding(.top, FH.Spacing.lg)
             }
-            .navigationTitle("Send Photo")
+            .navigationTitle(images.count == 1 ? "Send Photo" : "Send \(images.count) Photos")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -605,6 +659,9 @@ struct ChatImageGallery: View {
 // MARK: - Safe Array Access
 
 private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
     subscript(safe index: Int, default defaultValue: Element) -> Element {
         indices.contains(index) ? self[index] : defaultValue
     }

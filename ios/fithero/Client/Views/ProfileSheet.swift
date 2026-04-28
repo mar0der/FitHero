@@ -12,6 +12,7 @@ struct ProfileSheet: View {
     @AppStorage("notifyProgress") private var notifyProgress = false
 
     @State private var showPayments = false
+    @State private var showWorkoutHistory = false
 
     var body: some View {
         NavigationStack {
@@ -22,6 +23,7 @@ struct ProfileSheet: View {
                     VStack(spacing: FH.Spacing.xl) {
                         avatarHeader
                         infoSection
+                        activitySection
                         paymentsSection
                         notificationsSection
                         supportSection
@@ -44,6 +46,9 @@ struct ProfileSheet: View {
             }
             .navigationDestination(isPresented: $showPayments) {
                 PaymentsView()
+            }
+            .sheet(isPresented: $showWorkoutHistory) {
+                WorkoutHistoryView()
             }
         }
     }
@@ -91,6 +96,51 @@ struct ProfileSheet: View {
                 fieldRow(icon: "ruler", iconColor: FH.Colors.warning, title: "Height (cm)", value: $clientHeight, keyboard: .decimalPad)
                 fieldRow(icon: "scalemass", iconColor: FH.Colors.success, title: "Weight (kg)", value: $clientWeight, keyboard: .decimalPad)
             }
+        }
+    }
+
+    // MARK: - Activity Section
+
+    private var activitySection: some View {
+        VStack(alignment: .leading, spacing: FH.Spacing.md) {
+            Text("ACTIVITY")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(FH.Colors.textSubtle)
+                .tracking(1.2)
+
+            Button {
+                FHHaptics.light()
+                showWorkoutHistory = true
+            } label: {
+                HStack(spacing: FH.Spacing.md) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: FH.Radius.md)
+                            .fill(FH.Colors.success.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 14))
+                            .foregroundStyle(FH.Colors.success)
+                    }
+
+                    Text("Workout History")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(FH.Colors.text)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundStyle(FH.Colors.textSubtle)
+                }
+                .padding(FH.Spacing.md)
+                .background(FH.Colors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+                .overlay(
+                    RoundedRectangle(cornerRadius: FH.Radius.lg)
+                        .stroke(FH.Colors.border, lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 

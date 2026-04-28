@@ -590,6 +590,11 @@ struct ScheduleSessionSheet: View {
                                 in: Date()...
                             )
                             .datePickerStyle(.graphical)
+                            .tint(FH.Colors.primary)
+                            .colorScheme(.dark)
+                            .padding(FH.Spacing.base)
+                            .background(FH.Colors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
                         }
 
                         VStack(alignment: .leading, spacing: FH.Spacing.md) {
