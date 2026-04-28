@@ -43,7 +43,7 @@ struct ExerciseListView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedExercise) { exercise in
-            ExerciseDetailView(exercise: exercise)
+            ExerciseDetailView(exercise: exercise, showClientData: false)
         }
     }
 

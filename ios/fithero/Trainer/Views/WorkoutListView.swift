@@ -37,7 +37,7 @@ struct WorkoutListView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $selectedExercise) { exercise in
-            ExerciseDetailView(exercise: exercise)
+            ExerciseDetailView(exercise: exercise, showClientData: false)
         }
     }
 
@@ -474,7 +474,7 @@ struct ExercisePickerSheet: View {
                 }
             }
             .sheet(item: $previewExercise) { exercise in
-                ExerciseDetailView(exercise: exercise)
+                ExerciseDetailView(exercise: exercise, showClientData: false)
             }
         }
     }

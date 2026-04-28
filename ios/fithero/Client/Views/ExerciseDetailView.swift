@@ -2,14 +2,15 @@ import SwiftUI
 
 struct ExerciseDetailView: View {
     let exercise: Exercise
+    var showClientData: Bool = true
     @Environment(\.dismiss) private var dismiss
 
     private var history: [ExerciseHistoryEntry] {
-        SampleData.exerciseHistory(for: exercise.name)
+        showClientData ? SampleData.exerciseHistory(for: exercise.name) : []
     }
 
     private var personalRecord: PersonalRecord? {
-        SampleData.personalRecords.first { $0.exerciseName == exercise.name }
+        showClientData ? SampleData.personalRecords.first { $0.exerciseName == exercise.name } : nil
     }
 
     var body: some View {
@@ -24,10 +25,10 @@ struct ExerciseDetailView: View {
                         if let instructions = exercise.instructions {
                             instructionsCard(instructions)
                         }
-                        if let pr = personalRecord {
+                        if showClientData, let pr = personalRecord {
                             prCard(pr)
                         }
-                        if !history.isEmpty {
+                        if showClientData, !history.isEmpty {
                             historySection
                         }
                     }
