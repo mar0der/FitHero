@@ -216,3 +216,34 @@
 - `ios/fithero/Client/Views/ClientProgressView.swift`
 - `ios/fithero/Client/Views/ProfileSheet.swift`
 - `docs/SCREEN_STATUS.md`
+
+---
+
+## 2026-04-29 — iOS Lead Session
+
+### Changes
+- **[ios] Edit Workout (T-M-04)**: New `EditWorkoutSheet` — edit name/category/duration,
+  drag-to-reorder exercises, swipe-to-delete, add from library. Wired to WorkoutListView
+  card menu. Duplicate and Delete actions also functional.
+- **[ios] Workout model**: Added explicit `init(id:name:category:estimatedMinutes:exercises:)`
+  to preserve UUID during edits.
+- **[ios] Add Measurement (C-M-15)**: New `AddMeasurementSheet` with date picker, weight
+  input, and body measurement fields (chest/waist/hips/arms/thighs). Wired to Progress
+  header + button.
+- **[ios] Forgot Password (C-M-16)**: New `ForgotPasswordSheet` with email validation and
+  confirmation state. Wired into `ClientAuthView`, `TrainerAuthView`, and `AuthSignInView`.
+- **[docs] SCREEN_STATUS**: Client mobile 14→16 (C-M-15, C-M-16 both ✅ iOS).
+
+### Files Added
+- `ios/fithero/Trainer/Views/EditWorkoutSheet.swift`
+- `ios/fithero/Client/Views/AddMeasurementSheet.swift`
+- `ios/fithero/Shared/App/ForgotPasswordSheet.swift`
+
+### Files Modified
+- `ios/fithero/Shared/Models/FHModels.swift` (Workout init)
+- `ios/fithero/Trainer/Views/WorkoutListView.swift`
+- `ios/fithero/Client/Views/ClientProgressView.swift`
+- `ios/fithero/Client/Auth/ClientAuthView.swift`
+- `ios/fithero/Trainer/Auth/TrainerAuthView.swift`
+- `ios/fithero/Shared/App/AuthSignInView.swift`
+- `docs/SCREEN_STATUS.md`

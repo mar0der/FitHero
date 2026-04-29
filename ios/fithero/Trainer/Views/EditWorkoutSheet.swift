@@ -111,35 +111,44 @@ struct EditWorkoutSheet: View {
                     .foregroundStyle(FH.Colors.textMuted)
             }
 
-            VStack(spacing: FH.Spacing.sm) {
+            List {
                 ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                     exerciseEditRow(exercise, index: index)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                 }
                 .onMove(perform: moveExercise)
                 .onDelete(perform: deleteExercise)
-            }
 
-            Button {
-                FHHaptics.medium()
-                showExercisePicker = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 18))
-                    Text("Add Exercise")
-                        .font(.system(size: 15, weight: .semibold))
+                Button {
+                    FHHaptics.medium()
+                    showExercisePicker = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 18))
+                        Text("Add Exercise")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundStyle(FH.Colors.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, FH.Spacing.md)
+                    .background(FH.Colors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: FH.Radius.lg)
+                            .stroke(FH.Colors.primary.opacity(0.3), lineWidth: 1)
+                    )
                 }
-                .foregroundStyle(FH.Colors.primary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, FH.Spacing.md)
-                .background(FH.Colors.surface)
-                .clipShape(RoundedRectangle(cornerRadius: FH.Radius.lg))
-                .overlay(
-                    RoundedRectangle(cornerRadius: FH.Radius.lg)
-                        .stroke(FH.Colors.primary.opacity(0.3), lineWidth: 1)
-                )
+                .buttonStyle(.plain)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             }
-            .buttonStyle(.plain)
+            .listStyle(.plain)
+            .scrollDisabled(true)
+            .background(Color.clear)
         }
     }
 
