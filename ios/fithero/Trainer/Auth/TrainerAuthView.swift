@@ -8,6 +8,7 @@ struct TrainerAuthView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var isSignUpMode: Bool
+    @State private var showForgotPassword = false
 
     init(isSignUpMode: Bool = false) {
         _isSignUpMode = State(initialValue: isSignUpMode)
@@ -172,6 +173,9 @@ struct TrainerAuthView: View {
                 RoundedRectangle(cornerRadius: FH.Radius.md)
                     .stroke(FH.Colors.border, lineWidth: 1)
             )
+        }
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordSheet()
         }
     }
 

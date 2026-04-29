@@ -7,6 +7,7 @@ struct ClientProgressView: View {
     @State private var showAddPhoto = false
     @State private var showSubmitCheckIn = false
     @State private var showPhotoViewer = false
+    @State private var showAddMeasurement = false
     @State private var viewerSelectedIndex = 0
     @State private var selectedExercise: Exercise? = nil
     @State private var photos: [ProgressPhoto] = SampleData.progressPhotos
@@ -44,6 +45,9 @@ struct ClientProgressView: View {
         .sheet(item: $selectedExercise) { exercise in
             ExerciseDetailView(exercise: exercise)
         }
+        .sheet(isPresented: $showAddMeasurement) {
+            AddMeasurementSheet()
+        }
     }
 
     // MARK: - Header
@@ -60,7 +64,8 @@ struct ClientProgressView: View {
             }
             Spacer()
             Button {
-                // Add entry
+                FHHaptics.medium()
+                showAddMeasurement = true
             } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 28))

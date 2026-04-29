@@ -5,9 +5,11 @@ struct WorkoutListView: View {
     @State private var showNewWorkout = false
     @State private var selectedExercise: Exercise? = nil
     @State private var selectedWorkout: Workout? = nil
+    @State private var workoutToEdit: Workout? = nil
+    @State private var workouts: [Workout] = SampleData.workoutLibrary
 
     var filteredWorkouts: [Workout] {
-        var result = SampleData.workoutLibrary
+        var result = workouts
         if !searchText.isEmpty {
             result = result.filter {
                 $0.name.localizedCaseInsensitiveContains(searchText)
@@ -42,6 +44,13 @@ struct WorkoutListView: View {
         }
         .sheet(item: $selectedWorkout) { workout in
             WorkoutDetailView(workout: workout)
+        }
+        .sheet(item: $workoutToEdit) { workout in
+            EditWorkoutSheet(workout: workout) { updated in
+                if let index = workouts.firstIndex(where: { $0.id == updated.id }) {
+                    workouts[index] = updated
+                }
+            }
         }
     }
 
@@ -170,14 +179,20 @@ struct WorkoutListView: View {
 
             Button {
                 FHHaptics.selection()
-                // Edit workout
+                workoutToEdit = workout
             } label: {
                 Label("Edit", systemImage: "pencil")
             }
 
             Button {
                 FHHaptics.selection()
-                // Duplicate workout
+                let duplicated = Workout(
+                    name: "\(workout.name) Copy",
+                    category: workout.category,
+                    estimatedMinutes: workout.estimatedMinutes,
+                    exercises: workout.exercises
+                )
+                workouts.append(duplicated)
             } label: {
                 Label("Duplicate", systemImage: "doc.on.doc")
             }
@@ -186,7 +201,7 @@ struct WorkoutListView: View {
 
             Button(role: .destructive) {
                 FHHaptics.medium()
-                // Delete workout
+                workouts.removeAll(where: { $0.id == workout.id })
             } label: {
                 Label("Delete", systemImage: "trash")
             }

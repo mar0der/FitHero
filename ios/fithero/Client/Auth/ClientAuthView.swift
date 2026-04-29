@@ -9,6 +9,7 @@ struct ClientAuthView: View {
     @State private var password = ""
     @State private var isSignUpMode = true
     @State private var hasValidatedInvite = true // In production: validate from deep link
+    @State private var showForgotPassword = false
 
     private let trainer = SampleData.onboardingTrainer
 
@@ -220,9 +221,10 @@ struct ClientAuthView: View {
                     .stroke(FH.Colors.border, lineWidth: 1)
             )
         }
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordSheet()
+        }
     }
-
-
 
     private func completeAuth() {
         selectedRoleRawValue = AppRole.client.rawValue

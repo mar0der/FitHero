@@ -6,6 +6,7 @@ struct AuthSignInView: View {
 
     @State private var email = ""
     @State private var password = ""
+    @State private var showForgotPassword = false
 
     var body: some View {
         ZStack {
@@ -148,9 +149,10 @@ struct AuthSignInView: View {
                     .stroke(FH.Colors.border, lineWidth: 1)
             )
         }
+        .sheet(isPresented: $showForgotPassword) {
+            ForgotPasswordSheet()
+        }
     }
-
-
 
     private func signIn() {
         // In production: call backend auth, receive role + onboarding status

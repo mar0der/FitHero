@@ -59,11 +59,19 @@ struct CompletedWorkout: Identifiable {
 }
 
 struct Workout: Identifiable {
-    let id = UUID()
+    let id: UUID
     let name: String
     let category: String
     let estimatedMinutes: Int
     let exercises: [Exercise]
+
+    init(id: UUID = UUID(), name: String, category: String, estimatedMinutes: Int, exercises: [Exercise]) {
+        self.id = id
+        self.name = name
+        self.category = category
+        self.estimatedMinutes = estimatedMinutes
+        self.exercises = exercises
+    }
 }
 
 struct TrainingSession: Identifiable {
