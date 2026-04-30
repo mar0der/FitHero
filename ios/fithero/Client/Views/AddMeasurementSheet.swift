@@ -21,6 +21,7 @@ struct AddMeasurementSheet: View {
     @State private var rightArm = ""
     @State private var leftThigh = ""
     @State private var rightThigh = ""
+    @State private var isLoadingHealth = false
 
     private var hasAnyValue: Bool {
         !weight.isEmpty || !chest.isEmpty || !waist.isEmpty || !hips.isEmpty
@@ -85,10 +86,32 @@ struct AddMeasurementSheet: View {
 
     private var weightSection: some View {
         VStack(alignment: .leading, spacing: FH.Spacing.sm) {
-            Text("WEIGHT")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(FH.Colors.textSubtle)
-                .tracking(1.2)
+            HStack {
+                Text("WEIGHT")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(FH.Colors.textSubtle)
+                    .tracking(1.2)
+                Spacer()
+                if HealthKitHelper.shared.isAvailable {
+                    Button {
+                        Task { await pullFromHealth() }
+                    } label: {
+                        HStack(spacing: 4) {
+                            if isLoadingHealth {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                            } else {
+                                Image(systemName: "heart.fill")
+                                    .font(.system(size: 11))
+                            }
+                            Text(isLoadingHealth ? "Loading..." : "Refresh from Health")
+                                .font(.system(size: 12, weight: .medium))
+                        }
+                        .foregroundStyle(FH.Colors.primary)
+                    }
+                    .disabled(isLoadingHealth)
+                }
+            }
 
             HStack(spacing: FH.Spacing.sm) {
                 TextField("0.0", text: $weight)
@@ -106,6 +129,19 @@ struct AddMeasurementSheet: View {
                     .foregroundStyle(FH.Colors.textMuted)
             }
         }
+    }
+
+    private func pullFromHealth() async {
+        isLoadingHealth = true
+        let authorized = await HealthKitHelper.shared.requestAuth()
+        if authorized {
+            if let kg = await HealthKitHelper.shared.fetchMostRecentWeight() {
+                await MainActor.run {
+                    weight = String(format: "%.1f", kg)
+                }
+            }
+        }
+        isLoadingHealth = false
     }
 
     // MARK: - Body Measurements
