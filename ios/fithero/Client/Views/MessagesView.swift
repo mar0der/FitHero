@@ -155,6 +155,9 @@ struct MessagesView: View {
                 .padding(.horizontal, FH.Spacing.base)
                 .padding(.vertical, FH.Spacing.base)
             }
+            .onTapGesture {
+                isInputFocused = false
+            }
             .onChange(of: messages.count) { _, _ in
                 scrollToBottom(proxy: proxy)
             }
