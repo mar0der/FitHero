@@ -1,7 +1,7 @@
 # FitHero — Screen Status Matrix
 
 > Living document tracking implementation status across **both platforms**.
-> Last updated: 2026-04-27
+> Last updated: 2026-04-29
 
 **Legend**
 - `✅` Done — built and functional
@@ -36,7 +36,7 @@
 
 | Screen | iOS Status | Android Status | Decision |
 |--------|-----------|----------------|----------|
-| **Coach Vision** | ✅ | ❌ | Defer to Phase 2. iOS prototype exists. Android does not clone. |
+| **Coach Vision** | ✅ | 🚫 | Defer to Phase 2. iOS prototype exists. Android does not clone. |
 
 ---
 
@@ -56,7 +56,34 @@
 
 | Screen | iOS Status | Android Status | Decision |
 |--------|-----------|----------------|----------|
-| **New Client Evaluation** | ✅ | ❌ | Not in MVP. iOS prototype exists. Do not clone. |
+| **New Client Evaluation** | ✅ | 🚫 | Not in MVP. iOS prototype exists. Do not clone. |
+
+---
+
+## ANDROID BACKLOG — Prioritized
+
+> Next screens for the Android agent to clone from iOS.
+
+### P0 — Auth Foundation
+| Screen | iOS Source | Android Target | Notes |
+|--------|-----------|----------------|-------|
+| **Client Auth (C-M-01)** | `ClientAuthView.swift` | `ClientAuthScreen.kt` | Invite landing, sign-in/sign-up toggle, email/password, SSO stubs. Android currently jumps from role picker straight to app. |
+| **Trainer Auth (T-M-01)** | `TrainerAuthView.swift` | `TrainerAuthScreen.kt` | Trainer sign-in/sign-up, name/business fields. Same — no auth flow exists. |
+| **Forgot Password (C-M-16)** | `ForgotPasswordSheet.swift` | `ForgotPasswordSheet.kt` | Reusable sheet. Wire into both auth screens above. |
+
+### P1 — Post-Auth Flow
+| Screen | iOS Source | Android Target | Notes |
+|--------|-----------|----------------|-------|
+| **Onboarding (C-M-02)** | `ClientOnboardingView.swift` | `ClientOnboardingScreen.kt` | 5-step form. Follows client auth. |
+| **Exercise Detail (C-M-13)** | `ExerciseDetailView.swift` | `ExerciseDetailScreen.kt` | Reuse across client workout rows + trainer library. **No PR/history on trainer side.** |
+
+### P2 — Profile Depth
+| Screen | iOS Source | Android Target | Notes |
+|--------|-----------|----------------|-------|
+| **Payments (C-M-11)** | `PaymentsView.swift` | `PaymentsScreen.kt` | Plan card, payment method, history. Reached from Profile → Billing. |
+| **Add Payment (C-M-03)** | `AddPaymentMethodView.swift` | `AddPaymentMethodSheet.kt` | Card form. Sheet from Payments screen. |
+| **Workout History (C-M-14)** | `WorkoutHistoryView.swift` | `WorkoutHistoryScreen.kt` | Completed workouts list. Reached from Profile → Activity. |
+| **Add Measurement (C-M-15)** | `AddMeasurementSheet.swift` | `AddMeasurementSheet.kt` | Date + weight + body measurements. Reached from Progress + button. |
 
 ---
 
