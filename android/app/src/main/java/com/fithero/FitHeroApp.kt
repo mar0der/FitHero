@@ -47,11 +47,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fithero.ui.screens.ClientOnboardingScreen
 import com.fithero.ui.screens.HomeScreen
 import com.fithero.ui.screens.MessagesScreen
 import com.fithero.ui.screens.ProgressScreen
 import com.fithero.ui.screens.ScheduleScreen
 import com.fithero.ui.screens.WorkoutScreen
+import com.fithero.ui.screens.auth.AuthLandingScreen
+import com.fithero.ui.screens.auth.AuthSignInScreen
+import com.fithero.ui.screens.auth.AuthSignUpOptionsScreen
+import com.fithero.ui.screens.auth.ClientAuthScreen
+import com.fithero.ui.screens.auth.ForgotPasswordSheet
+import com.fithero.ui.screens.auth.TrainerAuthScreen
 import com.fithero.ui.screens.trainer.TrainerClientsScreen
 import com.fithero.ui.screens.trainer.TrainerLibraryScreen
 import com.fithero.ui.screens.trainer.TrainerMessagesScreen
@@ -69,78 +76,72 @@ import com.fithero.ui.theme.TextSubtle
 
 enum class Role { Trainer, Client }
 
+private enum class AuthScreen { Landing, SignIn, SignUpOptions, ClientAuth, TrainerAuth }
+
 @Composable
 fun FitHeroApp() {
     var role by rememberSaveable { mutableStateOf<Role?>(null) }
+    var hasCompletedOnboarding by rememberSaveable { mutableStateOf(false) }
 
     when (role) {
-        null -> RolePickerScreen(onPick = { role = it })
-        Role.Client -> ClientApp(onSwitchRole = { role = null })
+        null -> AuthFlow(onAuthenticated = { r, onboarded ->
+            role = r
+            hasCompletedOnboarding = onboarded
+        })
+        Role.Client -> {
+            if (hasCompletedOnboarding) {
+                ClientApp(onSwitchRole = { role = null })
+            } else {
+                ClientOnboardingScreen(onComplete = { hasCompletedOnboarding = true })
+            }
+        }
         Role.Trainer -> TrainerApp(onSwitchRole = { role = null })
     }
 }
 
-// ---------- Role Picker (1:1 with iOS) ----------
-
 @Composable
-private fun RolePickerScreen(onPick: (Role) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Bg)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
+private fun AuthFlow(onAuthenticated: (Role, Boolean) -> Unit) {
+    var screen by rememberSaveable { mutableStateOf(AuthScreen.Landing) }
+    var showForgotPassword by rememberSaveable { mutableStateOf(false) }
 
-        // FH Logo
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("FH", fontSize = 22.sp, fontWeight = FontWeight.Black, color = PrimaryInk)
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("FitHero", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = Text, letterSpacing = (-1).sp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (screen) {
+            AuthScreen.Landing -> AuthLandingScreen(
+                onSignIn = { screen = AuthScreen.SignIn },
+                onGetStarted = { screen = AuthScreen.SignUpOptions },
+                onDebugTrainer = { onAuthenticated(Role.Trainer, true) },
+                onDebugClient = { onAuthenticated(Role.Client, true) },
+                onDebugOnboarding = { onAuthenticated(Role.Client, false) }
+            )
+            AuthScreen.SignIn -> AuthSignInScreen(
+                onSignIn = { email ->
+                    val role = if (email.contains("trainer", ignoreCase = true)) Role.Trainer else Role.Client
+                    onAuthenticated(role, true)
+                },
+                onBack = { screen = AuthScreen.Landing },
+                onForgotPassword = { showForgotPassword = true }
+            )
+            AuthScreen.SignUpOptions -> AuthSignUpOptionsScreen(
+                onInvitedByTrainer = { screen = AuthScreen.ClientAuth },
+                onTrainer = { screen = AuthScreen.TrainerAuth },
+                onSignIn = { screen = AuthScreen.SignIn },
+                onBack = { screen = AuthScreen.Landing }
+            )
+            AuthScreen.ClientAuth -> ClientAuthScreen(
+                onComplete = { isSignUp -> onAuthenticated(Role.Client, !isSignUp) },
+                onBack = { screen = AuthScreen.SignUpOptions },
+                onForgotPassword = { showForgotPassword = true }
+            )
+            AuthScreen.TrainerAuth -> TrainerAuthScreen(
+                isSignUpModeInitial = true,
+                onComplete = { onAuthenticated(Role.Trainer, true) },
+                onBack = { screen = AuthScreen.SignUpOptions },
+                onForgotPassword = { showForgotPassword = true }
+            )
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Buttons
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Button(
-                onClick = { onPick(Role.Trainer) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = PrimaryInk),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Trainer", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 6.dp))
-            }
-
-            Button(
-                onClick = { onPick(Role.Client) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Surface2, contentColor = TextMuted),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Hero", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 6.dp))
-            }
-
-            Text(
-                "DEMO · NO AUTH",
-                fontSize = 11.sp,
-                color = TextSubtle,
-                letterSpacing = 1.2.sp,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
-            )
+        if (showForgotPassword) {
+            ForgotPasswordSheet(onDismiss = { showForgotPassword = false })
         }
     }
 }

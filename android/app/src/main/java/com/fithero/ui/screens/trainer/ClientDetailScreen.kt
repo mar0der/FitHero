@@ -41,6 +41,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,6 +65,7 @@ import com.fithero.ui.theme.Text
 import com.fithero.ui.theme.TextMuted
 import com.fithero.ui.theme.TextSubtle
 import com.fithero.ui.theme.Warning
+import com.fithero.ui.screens.MessagesScreen
 
 data class ClientItem(
     val name: String,
@@ -85,6 +88,9 @@ data class ClientItem(
 @Composable
 fun ClientDetailScreen(client: ClientItem, onDismiss: () -> Unit) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var showChat by remember { mutableStateOf(false) }
+    var showScheduleSheet by remember { mutableStateOf(false) }
+    var showAssignSheet by remember { mutableStateOf(false) }
     val tabs = listOf("Overview", "Programs", "Progress", "Notes")
 
     Box(modifier = Modifier.fillMaxSize().background(Bg)) {
@@ -101,7 +107,11 @@ fun ClientDetailScreen(client: ClientItem, onDismiss: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Action buttons
-            ActionButtons()
+            ActionButtons(
+                onMessage = { showChat = true },
+                onSchedule = { showScheduleSheet = true },
+                onAssign = { showAssignSheet = true }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -116,6 +126,34 @@ fun ClientDetailScreen(client: ClientItem, onDismiss: () -> Unit) {
                 2 -> ProgressTab()
                 3 -> NotesTab()
             }
+        }
+
+        // Chat overlay
+        if (showChat) {
+            MessagesScreen(
+                partnerName = client.name,
+                partnerInitial = client.initials,
+                isTrainerContext = true,
+                onBack = { showChat = false }
+            )
+        }
+
+        // Schedule sheet overlay
+        if (showScheduleSheet) {
+            ScheduleSessionSheet(
+                clientName = client.firstName,
+                onConfirm = { showScheduleSheet = false },
+                onDismiss = { showScheduleSheet = false }
+            )
+        }
+
+        // Assign sheet overlay
+        if (showAssignSheet) {
+            AssignProgramSheet(
+                clientName = client.firstName,
+                onConfirm = { showAssignSheet = false },
+                onDismiss = { showAssignSheet = false }
+            )
         }
     }
 }
@@ -180,20 +218,24 @@ private fun StatusPill(status: String) {
 }
 
 @Composable
-private fun ActionButtons() {
+private fun ActionButtons(
+    onMessage: () -> Unit,
+    onSchedule: () -> Unit,
+    onAssign: () -> Unit
+) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ActionButton(icon = Icons.AutoMirrored.Filled.Chat, label = "Message", color = Accent, modifier = Modifier.weight(1f))
-        ActionButton(icon = Icons.Default.CalendarToday, label = "Schedule", color = Primary, modifier = Modifier.weight(1f))
-        ActionButton(icon = Icons.Default.Assignment, label = "Assign", color = Warning, modifier = Modifier.weight(1f))
+        ActionButton(icon = Icons.AutoMirrored.Filled.Chat, label = "Message", color = Accent, modifier = Modifier.weight(1f), onClick = onMessage)
+        ActionButton(icon = Icons.Default.CalendarToday, label = "Schedule", color = Primary, modifier = Modifier.weight(1f), onClick = onSchedule)
+        ActionButton(icon = Icons.Default.Assignment, label = "Assign", color = Warning, modifier = Modifier.weight(1f), onClick = onAssign)
     }
 }
 
 @Composable
-private fun ActionButton(icon: ImageVector, label: String, color: Color, modifier: Modifier = Modifier) {
+private fun ActionButton(icon: ImageVector, label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .clickable { }
+            .clickable { onClick() }
             .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -568,4 +610,207 @@ private fun Divider(color: Color) {
             .height(1.dp)
             .background(color)
     )
+}
+
+
+// ---------- Schedule Session Sheet ----------
+
+@Composable
+private fun ScheduleSessionSheet(
+    clientName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedType by remember { mutableIntStateOf(0) }
+    var selectedDuration by remember { mutableIntStateOf(60) }
+    val types = listOf("In-person", "Video call", "Check-in")
+    val durations = listOf(15, 30, 45, 60, 90)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Bg.copy(alpha = 0.95f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Surface)
+                .clickable(enabled = false) { }
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
+                Text("✕", fontSize = 20.sp, color = TextSubtle, modifier = Modifier.clickable { onDismiss() })
+            }
+
+            Text("Schedule with $clientName", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Text)
+            Spacer(modifier = Modifier.height(20.dp))
+
+            SectionTitle("SESSION TYPE")
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                types.forEachIndexed { index, type ->
+                    val selected = selectedType == index
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(if (selected) Primary else Surface2)
+                            .clickable { selectedType = index }
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            type,
+                            fontSize = 14.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (selected) PrimaryInk else TextMuted
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            SectionTitle("DURATION")
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                durations.forEach { mins ->
+                    val selected = selectedDuration == mins
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (selected) Primary else Surface2)
+                            .clickable { selectedDuration = mins }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "${mins}m",
+                            fontSize = 14.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (selected) PrimaryInk else TextMuted
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Primary)
+                    .clickable { onConfirm() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Schedule Session", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = PrimaryInk)
+            }
+        }
+    }
+}
+
+// ---------- Assign Program Sheet ----------
+
+private data class WorkoutItem(val name: String, val exercises: String, val minutes: Int)
+
+private val workoutLibrary = listOf(
+    WorkoutItem("Upper Body Strength", "5 exercises", 45),
+    WorkoutItem("Lower Body Power", "6 exercises", 55),
+    WorkoutItem("Full Body HIIT", "8 exercises", 35),
+    WorkoutItem("Push Day", "6 exercises", 50),
+    WorkoutItem("Pull Day", "5 exercises", 45)
+)
+
+@Composable
+private fun AssignProgramSheet(
+    clientName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedWorkout by remember { mutableStateOf<WorkoutItem?>(null) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Bg.copy(alpha = 0.95f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .clip(RoundedCornerShape(20.dp))
+                .background(Surface)
+                .clickable(enabled = false) { }
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
+                Text("✕", fontSize = 20.sp, color = TextSubtle, modifier = Modifier.clickable { onDismiss() })
+            }
+
+            Text("Assign to $clientName", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Text)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Choose a workout from your library", fontSize = 15.sp, color = TextMuted)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            workoutLibrary.forEach { workout ->
+                val isSelected = selectedWorkout == workout
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) Surface2 else Surface)
+                        .border(1.dp, if (isSelected) Primary.copy(alpha = 0.4f) else Border, RoundedCornerShape(12.dp))
+                        .clickable { selectedWorkout = workout }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Primary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = Primary, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(workout.name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Text)
+                        Text("${workout.exercises} · ${workout.minutes} min", fontSize = 13.sp, color = TextMuted)
+                    }
+                    if (isSelected) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Success, modifier = Modifier.size(22.dp))
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (selectedWorkout != null) Primary else Primary.copy(alpha = 0.3f))
+                    .clickable(enabled = selectedWorkout != null) { onConfirm() },
+                contentAlignment = Alignment.Center
+            ) {
+                val workoutName = selectedWorkout?.name
+                Text(
+                    if (workoutName != null) "Assign $workoutName" else "Select a workout",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PrimaryInk
+                )
+            }
+        }
+    }
 }

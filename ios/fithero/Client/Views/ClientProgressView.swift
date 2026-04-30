@@ -11,8 +11,18 @@ struct ClientProgressView: View {
     @State private var viewerSelectedIndex = 0
     @State private var selectedExercise: Exercise? = nil
     @State private var photos: [ProgressPhoto] = SampleData.progressPhotos
-    let weightHistory = SampleData.weightHistory
     let personalRecords = SampleData.personalRecords
+
+    @AppStorage("weightHistoryJSON") private var weightHistoryJSON: String = ""
+
+    private var weightHistory: [WeightEntry] {
+        guard !weightHistoryJSON.isEmpty,
+              let data = weightHistoryJSON.data(using: .utf8),
+              let entries = try? JSONDecoder().decode([PersistedWeightEntry].self, from: data) else {
+            return SampleData.weightHistory
+        }
+        return entries.map { WeightEntry(date: Date(timeIntervalSince1970: $0.timestamp), weight: $0.weight) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -110,10 +120,16 @@ struct ClientProgressView: View {
     private var weightSection: some View {
         VStack(spacing: FH.Spacing.xl) {
             // Summary card
+            let history = weightHistory
+            let currentWeight = history.last?.weight ?? 79.8
+            let startWeight = history.first?.weight ?? 82.3
+            let change = currentWeight - startWeight
+            let changeStr = String(format: "%+.1f", change)
+
             HStack(spacing: FH.Spacing.xxl) {
-                statBlock(label: "Current", value: "79.8", unit: "kg")
-                statBlock(label: "Start", value: "82.3", unit: "kg")
-                statBlock(label: "Change", value: "-2.5", unit: "kg", highlight: true)
+                statBlock(label: "Current", value: String(format: "%.1f", currentWeight), unit: "kg")
+                statBlock(label: "Start", value: String(format: "%.1f", startWeight), unit: "kg")
+                statBlock(label: "Change", value: changeStr, unit: "kg", highlight: true)
             }
             .fhCard()
 
@@ -281,15 +297,23 @@ struct ClientProgressView: View {
 
     // MARK: - Measurements Section
 
+    @AppStorage("measurementChest") private var measurementChest: String = ""
+    @AppStorage("measurementWaist") private var measurementWaist: String = ""
+    @AppStorage("measurementHips") private var measurementHips: String = ""
+    @AppStorage("measurementLeftArm") private var measurementLeftArm: String = ""
+    @AppStorage("measurementRightArm") private var measurementRightArm: String = ""
+    @AppStorage("measurementLeftThigh") private var measurementLeftThigh: String = ""
+    @AppStorage("measurementRightThigh") private var measurementRightThigh: String = ""
+
     private var measurementsSection: some View {
         VStack(spacing: FH.Spacing.md) {
-            measurementRow(name: "Chest", current: "98.5", previous: "99.2", unit: "cm")
-            measurementRow(name: "Waist", current: "82.0", previous: "84.5", unit: "cm")
-            measurementRow(name: "Hips", current: "96.0", previous: "96.8", unit: "cm")
-            measurementRow(name: "Left Arm", current: "36.5", previous: "35.8", unit: "cm")
-            measurementRow(name: "Right Arm", current: "37.0", previous: "36.2", unit: "cm")
-            measurementRow(name: "Left Thigh", current: "58.0", previous: "57.5", unit: "cm")
-            measurementRow(name: "Right Thigh", current: "58.5", previous: "57.8", unit: "cm")
+            measurementRow(name: "Chest", current: measurementChest, defaultCurrent: "98.5", previous: "99.2", unit: "cm")
+            measurementRow(name: "Waist", current: measurementWaist, defaultCurrent: "82.0", previous: "84.5", unit: "cm")
+            measurementRow(name: "Hips", current: measurementHips, defaultCurrent: "96.0", previous: "96.8", unit: "cm")
+            measurementRow(name: "Left Arm", current: measurementLeftArm, defaultCurrent: "36.5", previous: "35.8", unit: "cm")
+            measurementRow(name: "Right Arm", current: measurementRightArm, defaultCurrent: "37.0", previous: "36.2", unit: "cm")
+            measurementRow(name: "Left Thigh", current: measurementLeftThigh, defaultCurrent: "58.0", previous: "57.5", unit: "cm")
+            measurementRow(name: "Right Thigh", current: measurementRightThigh, defaultCurrent: "58.5", previous: "57.8", unit: "cm")
         }
     }
 
@@ -454,8 +478,9 @@ struct ClientProgressView: View {
         }
     }
 
-    private func measurementRow(name: String, current: String, previous: String, unit: String) -> some View {
-        let curr = Double(current) ?? 0
+    private func measurementRow(name: String, current: String, defaultCurrent: String, previous: String, unit: String) -> some View {
+        let effectiveCurrent = current.isEmpty ? defaultCurrent : current
+        let curr = Double(effectiveCurrent) ?? 0
         let prev = Double(previous) ?? 0
         let diff = curr - prev
         let diffStr = String(format: "%+.1f", diff)
@@ -467,7 +492,7 @@ struct ClientProgressView: View {
 
             Spacer()
 
-            Text("\(current) \(unit)")
+            Text("\(effectiveCurrent) \(unit)")
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundStyle(FH.Colors.text)
                 .monospacedDigit()

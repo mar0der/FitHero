@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -26,7 +27,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -61,67 +64,82 @@ import com.fithero.ui.theme.Warning
 @Composable
 fun ProgressScreen(modifier: Modifier = Modifier) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Weight", "PRs", "Body", "Photos")
+    val tabs = listOf("Weight", "PRs", "Body", "Photos", "Check-Ins")
+    var showAddMeasurement by remember { mutableStateOf(false) }
+    var showExerciseDetail by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Bg)
-    ) {
-        // Header
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Progress", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Text)
-            Text("8 weeks of training", fontSize = 14.sp, color = TextMuted)
-        }
-
-        // Segmented control
-        Row(
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Surface)
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                .fillMaxSize()
+                .background(Bg)
         ) {
-            tabs.forEachIndexed { index, title ->
-                val selected = selectedTab == index
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (selected) Primary else Surface)
-                        .clickable { selectedTab = index }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = title,
-                        fontSize = 14.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                        color = if (selected) PrimaryInk else TextMuted
-                    )
+            // Header
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Progress", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Text)
+                Text("8 weeks of training", fontSize = 14.sp, color = TextMuted)
+            }
+
+            // Segmented control
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Surface)
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    val selected = selectedTab == index
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (selected) Primary else Surface)
+                            .clickable { selectedTab = index }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = title,
+                            fontSize = 14.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            color = if (selected) PrimaryInk else TextMuted
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Content
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                when (selectedTab) {
+                    0 -> WeightTab()
+                    1 -> PRsTab(onExerciseTap = { showExerciseDetail = it })
+                    2 -> BodyTab(onAddMeasurement = { showAddMeasurement = true })
+                    3 -> PhotosTab()
+                    4 -> CheckInsTab()
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Content
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 32.dp)
-        ) {
-            when (selectedTab) {
-                0 -> WeightTab()
-                1 -> PRsTab()
-                2 -> BodyTab()
-                3 -> PhotosTab()
-            }
+        if (showAddMeasurement) {
+            AddMeasurementSheet(
+                onDismiss = { showAddMeasurement = false },
+                onAdd = { showAddMeasurement = false }
+            )
+        }
+        showExerciseDetail?.let { name ->
+            ExerciseDetailScreen(exerciseName = name, onDismiss = { showExerciseDetail = null })
         }
     }
 }
@@ -311,7 +329,7 @@ private val personalRecords = listOf(
 private data class PR(val exerciseName: String, val value: String, val date: String)
 
 @Composable
-private fun PRsTab() {
+private fun PRsTab(onExerciseTap: (String) -> Unit = {}) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         personalRecords.forEach { pr ->
             Row(
@@ -319,6 +337,7 @@ private fun PRsTab() {
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .background(Surface)
+                    .clickable { onExerciseTap(pr.exerciseName) }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -357,8 +376,23 @@ private val measurements = listOf(
 private data class Measurement(val name: String, val current: String, val previous: String, val unit: String)
 
 @Composable
-private fun BodyTab() {
+private fun BodyTab(onAddMeasurement: () -> Unit = {}) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Primary)
+                    .clickable(onClick = onAddMeasurement)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text("+ Add Measurement", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryInk)
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
         measurements.forEach { m ->
             val curr = m.current.toDoubleOrNull() ?: 0.0
             val prev = m.previous.toDoubleOrNull() ?: 0.0
@@ -401,51 +435,71 @@ private val progressPhotos = listOf(
 
 private data class PhotoItem(val label: String, val date: String, val colorName: String)
 
+private data class PhotoWeek(val weekLabel: String, val dateRange: String, val photos: List<PhotoItem>)
+
+private val photoWeeks = listOf(
+    PhotoWeek("Week 8", "Mar 31 – Apr 6", listOf(
+        PhotoItem("Progress", "Apr 2", "accent"),
+        PhotoItem("Front", "Apr 3", "primary"),
+        PhotoItem("Back", "Apr 4", "warning")
+    )),
+    PhotoWeek("Week 7", "Mar 24 – Mar 30", listOf(
+        PhotoItem("Side", "Mar 25", "success"),
+        PhotoItem("Front", "Mar 27", "primary")
+    ))
+)
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PhotosTab() {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Start / Current row
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PhotoPlaceholder("Start", "Feb 1, 26", TextSubtle, modifier = Modifier.weight(1f))
-            PhotoPlaceholder("Current", "Apr 21", Primary, modifier = Modifier.weight(1f))
+        photoWeeks.forEach { week ->
+            WeekPhotoSection(week)
         }
+    }
+}
 
-        // Timeline grid
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
-                .padding(16.dp)
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun WeekPhotoSection(week: PhotoWeek) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Surface)
+            .padding(16.dp)
+    ) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("PHOTO TIMELINE", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSubtle, letterSpacing = 1.2.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                maxItemsInEachRow = 3
+            Column {
+                Text(week.weekLabel, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Text)
+                Text("${week.dateRange} · ${week.photos.size} photos", fontSize = 12.sp, color = TextMuted)
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Primary.copy(alpha = 0.1f))
+                    .border(1.dp, Primary.copy(alpha = 0.3f), RoundedCornerShape(999.dp))
+                    .clickable { }
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                progressPhotos.forEach { photo ->
-                    PhotoCard(photo, modifier = Modifier.weight(1f))
-                }
-                // Add button
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Surface2)
-                        .border(1.dp, Primary.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                        .clickable { },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = Primary, modifier = Modifier.size(24.dp))
-                    Text("Add", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Primary)
-                }
+                Text("+ Add", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Primary)
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            maxItemsInEachRow = 3
+        ) {
+            week.photos.forEach { photo ->
+                PhotoCard(photo, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -500,5 +554,186 @@ private fun PhotoCard(photo: PhotoItem, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(photo.label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Text)
         Text(photo.date, fontSize = 11.sp, color = TextMuted)
+    }
+}
+
+
+// ---------- Check-Ins Tab ----------
+
+@Composable
+private fun CheckInsTab() {
+    var showSubmitted by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Week header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Surface)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            WeekColumn(label = "Previous", week = "Week 7", date = "Mar 24", modifier = Modifier.weight(1f))
+            Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(Border))
+            WeekColumn(label = "Current", week = "Week 8", date = "Mar 31", isCurrent = true, modifier = Modifier.weight(1f))
+        }
+
+        // Weight comparison
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Surface)
+                .padding(16.dp)
+        ) {
+            Text("WEIGHT", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSubtle, letterSpacing = 1.2.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Bottom) {
+                CheckInValueColumn(value = "80.2", unit = "kg", label = "Previous")
+                Text("→", fontSize = 14.sp, color = TextSubtle)
+                CheckInValueColumn(value = "79.8", unit = "kg", label = "Current", highlight = true)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("▼", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Success)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("0.4 kg", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Success)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("— on track for your goal", fontSize = 14.sp, color = TextMuted)
+            }
+        }
+
+        // Measurements comparison
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Surface)
+                .padding(16.dp)
+        ) {
+            Text("MEASUREMENTS", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSubtle, letterSpacing = 1.2.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                CheckInMeasurementRow("Chest", "99.2", "98.5", "cm", lowerIsBetter = true)
+                CheckInMeasurementRow("Waist", "84.5", "82.0", "cm", lowerIsBetter = true)
+                CheckInMeasurementRow("Hips", "96.8", "96.0", "cm", lowerIsBetter = true)
+                CheckInMeasurementRow("Left Arm", "35.8", "36.5", "cm", lowerIsBetter = false)
+                CheckInMeasurementRow("Right Arm", "36.2", "37.0", "cm", lowerIsBetter = false)
+                CheckInMeasurementRow("Left Thigh", "57.5", "58.0", "cm", lowerIsBetter = false)
+                CheckInMeasurementRow("Right Thigh", "57.8", "58.5", "cm", lowerIsBetter = false)
+            }
+        }
+
+        // Photos comparison
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Surface)
+                .padding(16.dp)
+        ) {
+            Text("PHOTOS", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSubtle, letterSpacing = 1.2.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PhotoPlaceholder("Week 7", "Mar 24", TextSubtle, modifier = Modifier.weight(1f))
+                PhotoPlaceholder("Week 8", "Mar 31", Primary, modifier = Modifier.weight(1f))
+            }
+        }
+
+        // Submit CTA
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(Primary)
+                .clickable { showSubmitted = true }
+                .padding(vertical = 14.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Submit Check-In", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = PrimaryInk)
+        }
+    }
+
+    if (showSubmitted) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { showSubmitted = false }) {
+            Surface(
+                color = Surface,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Check-In Submitted", color = Text, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Your coach will review your progress and get back to you.", color = TextMuted, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Primary)
+                            .clickable { showSubmitted = false }
+                            .padding(horizontal = 24.dp, vertical = 10.dp)
+                    ) {
+                        Text("Great!", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = PrimaryInk)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekColumn(label: String, week: String, date: String, isCurrent: Boolean = false, modifier: Modifier = Modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (isCurrent) Primary else TextSubtle, letterSpacing = 1.sp)
+        Text(week, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Text)
+        Text(date, fontSize = 13.sp, color = TextMuted)
+    }
+}
+
+@Composable
+private fun CheckInValueColumn(value: String, unit: String, label: String, highlight: Boolean = false) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = if (highlight) Primary else Text)
+            Text(unit, fontSize = 13.sp, color = TextMuted, modifier = Modifier.padding(start = 2.dp, bottom = 3.dp))
+        }
+        Text(label, fontSize = 12.sp, color = TextSubtle)
+    }
+}
+
+@Composable
+private fun CheckInMeasurementRow(name: String, prev: String, curr: String, unit: String, lowerIsBetter: Boolean) {
+    val previous = prev.toDoubleOrNull() ?: 0.0
+    val current = curr.toDoubleOrNull() ?: 0.0
+    val diff = current - previous
+    val diffStr = String.format("%+.1f", diff)
+    val isImprovement = if (lowerIsBetter) diff < 0 else diff > 0
+    val deltaColor = when {
+        diff == 0.0 -> TextSubtle
+        isImprovement -> Success
+        else -> Danger
+    }
+    val arrow = when {
+        diff < 0 -> "▼"
+        diff > 0 -> "▲"
+        else -> "—"
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Bg)
+            .border(1.dp, Border, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Text, modifier = Modifier.width(80.dp))
+        Text("$prev → $curr $unit", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Text, modifier = Modifier.weight(1f))
+        Row(modifier = Modifier.width(60.dp), horizontalArrangement = Arrangement.End) {
+            Text(arrow, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = deltaColor)
+            Spacer(modifier = Modifier.width(2.dp))
+            Text(diffStr, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = deltaColor)
+        }
     }
 }

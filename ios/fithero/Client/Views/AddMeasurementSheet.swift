@@ -2,6 +2,16 @@ import SwiftUI
 
 struct AddMeasurementSheet: View {
     @Environment(\.dismiss) private var dismiss
+
+    @AppStorage("weightHistoryJSON") private var weightHistoryJSON: String = ""
+    @AppStorage("measurementChest") private var measurementChest: String = ""
+    @AppStorage("measurementWaist") private var measurementWaist: String = ""
+    @AppStorage("measurementHips") private var measurementHips: String = ""
+    @AppStorage("measurementLeftArm") private var measurementLeftArm: String = ""
+    @AppStorage("measurementRightArm") private var measurementRightArm: String = ""
+    @AppStorage("measurementLeftThigh") private var measurementLeftThigh: String = ""
+    @AppStorage("measurementRightThigh") private var measurementRightThigh: String = ""
+
     @State private var date = Date()
     @State private var weight = ""
     @State private var chest = ""
@@ -157,10 +167,46 @@ struct AddMeasurementSheet: View {
 
     private func save() {
         FHHaptics.success()
-        // In a real app: persist to backend or local store
+
+        // Persist weight entry
+        if let w = Double(weight), w > 0 {
+            var history = loadWeightHistory()
+            history.append(WeightEntry(date: date, weight: w))
+            history.sort { $0.date < $1.date }
+            saveWeightHistory(history)
+        }
+
+        // Persist measurements
+        if !chest.isEmpty { measurementChest = chest }
+        if !waist.isEmpty { measurementWaist = waist }
+        if !hips.isEmpty { measurementHips = hips }
+        if !leftArm.isEmpty { measurementLeftArm = leftArm }
+        if !rightArm.isEmpty { measurementRightArm = rightArm }
+        if !leftThigh.isEmpty { measurementLeftThigh = leftThigh }
+        if !rightThigh.isEmpty { measurementRightThigh = rightThigh }
+
         dismiss()
     }
+
+    private func loadWeightHistory() -> [WeightEntry] {
+        guard !weightHistoryJSON.isEmpty,
+              let data = weightHistoryJSON.data(using: .utf8),
+              let entries = try? JSONDecoder().decode([PersistedWeightEntry].self, from: data) else {
+            return SampleData.weightHistory
+        }
+        return entries.map { WeightEntry(date: Date(timeIntervalSince1970: $0.timestamp), weight: $0.weight) }
+    }
+
+    private func saveWeightHistory(_ history: [WeightEntry]) {
+        let entries = history.map { PersistedWeightEntry(timestamp: $0.date.timeIntervalSince1970, weight: $0.weight) }
+        if let data = try? JSONEncoder().encode(entries),
+           let json = String(data: data, encoding: .utf8) {
+            weightHistoryJSON = json
+        }
+    }
 }
+
+
 
 #Preview {
     AddMeasurementSheet()

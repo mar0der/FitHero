@@ -2,6 +2,7 @@ package com.fithero.ui.screens.trainer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,12 +20,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fithero.ui.screens.MessagesScreen
 import com.fithero.ui.theme.Accent
 import com.fithero.ui.theme.Bg
 import com.fithero.ui.theme.Border
@@ -43,7 +49,7 @@ private data class Conversation(
     val initials: String
 )
 
-private val conversations = listOf(
+private val defaultConversations = listOf(
     Conversation("Alex Johnson", "Thanks for the program update! Ready for tomorrow.", "10m", 2, "AJ"),
     Conversation("Marco Rossi", "Can we reschedule Thursday to Friday?", "1h", 1, "MR"),
     Conversation("Erika Szabo", "Hit a new PR on deadlifts today 🎉", "3h", 0, "ES"),
@@ -52,35 +58,58 @@ private val conversations = listOf(
 
 @Composable
 fun TrainerMessagesScreen(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Bg)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text("Messages", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Text)
-        Text("${conversations.count { it.unread > 0 }} unread", fontSize = 14.sp, color = TextMuted)
+    var conversations by remember { mutableStateOf(defaultConversations) }
+    var selectedConversation by remember { mutableStateOf<Conversation?>(null) }
 
-        Spacer(modifier = Modifier.height(20.dp))
+    Box(modifier = modifier.fillMaxSize().background(Bg)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+        ) {
+            Text("Messages", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Text)
+            Text("${conversations.count { it.unread > 0 }} unread", fontSize = 14.sp, color = TextMuted)
 
-        conversations.forEach { conv ->
-            ConversationRow(conv)
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            conversations.forEach { conv ->
+                ConversationRow(
+                    conv = conv,
+                    onClick = {
+                        conversations = conversations.map {
+                            if (it.name == conv.name) it.copy(unread = 0) else it
+                        }
+                        selectedConversation = conv
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        // Chat sheet overlay
+        selectedConversation?.let { conv ->
+            MessagesScreen(
+                partnerName = conv.name,
+                partnerInitial = conv.initials,
+                isTrainerContext = true,
+                onBack = { selectedConversation = null }
+            )
+        }
     }
 }
 
 @Composable
-private fun ConversationRow(conv: Conversation) {
+private fun ConversationRow(conv: Conversation, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Surface)
             .border(1.dp, Border, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

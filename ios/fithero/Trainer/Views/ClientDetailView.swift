@@ -6,6 +6,8 @@ struct ClientDetailView: View {
     @State private var showMessageSheet = false
     @State private var showScheduleSheet = false
     @State private var showAssignSheet = false
+    @State private var showAddNoteSheet = false
+    @State private var notes: [SessionNote] = SampleData.sessionNotes
     @Environment(\.dismiss) private var dismiss
 
     let tabs = ["Overview", "Programs", "Progress", "Notes"]
@@ -328,7 +330,8 @@ struct ClientDetailView: View {
                 }
 
                 Button {
-                    // Assign new program
+                    FHHaptics.medium()
+                    showAssignSheet = true
                 } label: {
                     HStack {
                         Image(systemName: "arrow.2.squarepath")
@@ -477,7 +480,8 @@ struct ClientDetailView: View {
     private var notesTab: some View {
         VStack(spacing: FH.Spacing.xl) {
             Button {
-                // Add note
+                FHHaptics.medium()
+                showAddNoteSheet = true
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "plus.circle.fill")
@@ -485,6 +489,12 @@ struct ClientDetailView: View {
                 }
             }
             .buttonStyle(FHPrimaryButtonStyle())
+            .sheet(isPresented: $showAddNoteSheet) {
+                AddNoteSheet { text in
+                    let newNote = SessionNote(date: Date().formatted(.dateTime.month(.abbreviated).day()), text: text)
+                    notes.insert(newNote, at: 0)
+                }
+            }
 
             VStack(alignment: .leading, spacing: FH.Spacing.md) {
                 Text("RECENT NOTES")
@@ -493,9 +503,9 @@ struct ClientDetailView: View {
                     .tracking(1.2)
 
                 VStack(spacing: FH.Spacing.sm) {
-                    noteCard(date: "Apr 20", text: "Great energy today. Pushed weight up on bench and handled it well. Keep protein high this week.")
-                    noteCard(date: "Apr 18", text: "Mentioned left shoulder tightness during warm-up. Monitored throughout session, no pain at working weight. Recommend foam rolling before next push day.")
-                    noteCard(date: "Apr 15", text: "Check-in call: down 0.8 kg, sleep improving, stress lower. Nutrition adherence at 90%.")
+                    ForEach(notes) { note in
+                        noteCard(date: note.date, text: note.text)
+                    }
                 }
             }
         }

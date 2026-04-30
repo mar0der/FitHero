@@ -38,9 +38,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.provider.CalendarContract
+import java.text.SimpleDateFormat
+import java.util.Locale
 import com.fithero.ui.theme.Accent
 import com.fithero.ui.theme.Bg
 import com.fithero.ui.theme.Border
@@ -86,7 +93,8 @@ private val upcomingSessions = listOf(
 fun ScheduleScreen(modifier: Modifier = Modifier) {
     var selectedSession by remember { mutableStateOf<TrainingSession?>(null) }
     var showReschedule by remember { mutableStateOf(false) }
-    var showCalendarToast by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     Box(modifier = modifier.fillMaxSize().background(Bg)) {
         Column(
@@ -104,7 +112,10 @@ fun ScheduleScreen(modifier: Modifier = Modifier) {
                     session = session,
                     isNext = idx == 0,
                     onTap = { selectedSession = session },
-                    onAddToCalendar = { showCalendarToast = true },
+                    onAddToCalendar = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        addToCalendar(context, session)
+                    },
                     onReschedule = {
                         selectedSession = session
                         showReschedule = true
@@ -147,11 +158,15 @@ fun ScheduleScreen(modifier: Modifier = Modifier) {
         }
 
         // Detail sheet overlay
-        if (selectedSession != null && !showReschedule) {
+        val currentSession = selectedSession
+        if (currentSession != null && !showReschedule) {
             SessionDetailSheet(
-                session = selectedSession!!,
+                session = currentSession,
                 onDismiss = { selectedSession = null },
-                onAddToCalendar = { showCalendarToast = true },
+                onAddToCalendar = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    addToCalendar(context, currentSession)
+                },
                 onReschedule = { showReschedule = true }
             )
         }
@@ -496,5 +511,26 @@ private fun RescheduleSheet(session: TrainingSession, onDismiss: () -> Unit) {
                 Text("Send Reschedule Request", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 4.dp))
             }
         }
+    }
+}
+
+private fun addToCalendar(context: android.content.Context, session: TrainingSession) {
+    val sdf = SimpleDateFormat("dd MMM yyyy HH:mm", Locale.ENGLISH)
+    val dateStr = "${session.day} ${session.month} 2026 ${session.time}"
+    val startTime = sdf.parse(dateStr)?.time ?: return
+    val endTime = startTime + session.durationMinutes * 60 * 1000
+
+    val intent = Intent(Intent.ACTION_INSERT).apply {
+        data = CalendarContract.Events.CONTENT_URI
+        putExtra(CalendarContract.Events.TITLE, "${session.type.label} with ${session.trainerName}")
+        putExtra(CalendarContract.Events.EVENT_LOCATION, session.location ?: "")
+        putExtra(CalendarContract.Events.DESCRIPTION, "FitHero training session")
+        putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startTime)
+        putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endTime)
+        putExtra(CalendarContract.Events.ALL_DAY, false)
+    }
+
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
     }
 }

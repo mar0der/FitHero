@@ -218,6 +218,12 @@ enum SampleData {
 
     static let onboardingTrainer = TrainerInfo(name: "Maya", photoInitial: "M", inviteMessage: "I'd love to help you reach your fitness goals. Let's get started.")
 
+    static let sessionNotes: [SessionNote] = [
+        SessionNote(date: "Apr 20", text: "Great energy today. Pushed weight up on bench and handled it well. Keep protein high this week."),
+        SessionNote(date: "Apr 18", text: "Mentioned left shoulder tightness during warm-up. Monitored throughout session, no pain at working weight. Recommend foam rolling before next push day."),
+        SessionNote(date: "Apr 15", text: "Check-in call: down 0.8 kg, sleep improving, stress lower. Nutrition adherence at 90%."),
+    ]
+
     static var progressPhotos: [ProgressPhoto] {
         let cal = Calendar.current
         let now = Date()
@@ -228,6 +234,21 @@ enum SampleData {
             ProgressPhoto(date: cal.date(byAdding: .day, value: -14, to: now)!, label: "Week 7", sfSymbol: "figure.core.training", colorName: "success"),
         ]
     }
+}
+
+// MARK: - Persisted Weight Entry (for @AppStorage)
+
+struct PersistedWeightEntry: Codable {
+    let timestamp: TimeInterval
+    let weight: Double
+}
+
+// MARK: - Session Note
+
+struct SessionNote: Identifiable {
+    let id = UUID()
+    let date: String
+    let text: String
 }
 
 // MARK: - Onboarding Models

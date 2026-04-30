@@ -83,6 +83,8 @@ private const val clientAvatar = "A"
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier, onStartWorkout: () -> Unit = {}, onSignOut: () -> Unit = {}) {
     var showProfile by remember { mutableStateOf(false) }
+    var showPayments by remember { mutableStateOf(false) }
+    var showWorkoutHistory by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -105,7 +107,21 @@ fun HomeScreen(modifier: Modifier = Modifier, onStartWorkout: () -> Unit = {}, o
         }
 
         if (showProfile) {
-            ProfileSheet(onDismiss = { showProfile = false }, onSignOut = onSignOut)
+            ProfileSheet(
+                onDismiss = { showProfile = false },
+                onSignOut = onSignOut,
+                onPayments = { showPayments = true },
+                onWorkoutHistory = { showWorkoutHistory = true }
+            )
+        }
+        if (showPayments) {
+            PaymentsScreen(
+                onDismiss = { showPayments = false },
+                onAddPayment = { }
+            )
+        }
+        if (showWorkoutHistory) {
+            WorkoutHistoryScreen(onDismiss = { showWorkoutHistory = false })
         }
     }
 }

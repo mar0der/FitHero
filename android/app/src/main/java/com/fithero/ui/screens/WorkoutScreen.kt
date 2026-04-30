@@ -1,5 +1,7 @@
 package com.fithero.ui.screens
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,47 +48,55 @@ fun WorkoutScreen(modifier: Modifier = Modifier) {
     var phase by remember { mutableStateOf<WorkoutPhase>(WorkoutPhase.Read) }
     var completedExercises by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var totalElapsed by remember { mutableIntStateOf(0) }
+    var showExerciseDetail by remember { mutableStateOf<String?>(null) }
 
-    when (phase) {
-        is WorkoutPhase.Read -> WorkoutReadScreen(
-            modifier = modifier,
-            workout = todayWorkoutData,
-            completedExercises = completedExercises,
-            onSelectExercise = { index ->
-                phase = WorkoutPhase.Active(index)
-            },
-            onDismiss = { /* tab dismiss handled by nav */ }
-        )
-        is WorkoutPhase.Active -> {
-            val index = (phase as WorkoutPhase.Active).exerciseIndex
-            ActiveWorkoutScreen(
+    Box(modifier = modifier.fillMaxSize()) {
+        when (phase) {
+            is WorkoutPhase.Read -> WorkoutReadScreen(
                 modifier = modifier,
                 workout = todayWorkoutData,
-                startingExerciseIndex = index,
-                onExerciseDone = { elapsed ->
-                    totalElapsed += elapsed
-                    completedExercises = completedExercises + index
-                    phase = if (completedExercises.size == todayWorkoutData.exercises.size) {
-                        WorkoutPhase.Summary(totalElapsed)
-                    } else {
-                        WorkoutPhase.Read
-                    }
+                completedExercises = completedExercises,
+                onSelectExercise = { index ->
+                    phase = WorkoutPhase.Active(index)
                 },
-                onAbandon = { phase = WorkoutPhase.Read }
+                onDismiss = { /* tab dismiss handled by nav */ },
+                onExerciseDetail = { showExerciseDetail = it }
             )
+            is WorkoutPhase.Active -> {
+                val index = (phase as WorkoutPhase.Active).exerciseIndex
+                ActiveWorkoutScreen(
+                    modifier = modifier,
+                    workout = todayWorkoutData,
+                    startingExerciseIndex = index,
+                    onExerciseDone = { elapsed ->
+                        totalElapsed += elapsed
+                        completedExercises = completedExercises + index
+                        phase = if (completedExercises.size == todayWorkoutData.exercises.size) {
+                            WorkoutPhase.Summary(totalElapsed)
+                        } else {
+                            WorkoutPhase.Read
+                        }
+                    },
+                    onAbandon = { phase = WorkoutPhase.Read }
+                )
+            }
+            is WorkoutPhase.Summary -> {
+                val elapsed = (phase as WorkoutPhase.Summary).durationSeconds
+                WorkoutSummaryScreen(
+                    modifier = modifier,
+                    workout = todayWorkoutData,
+                    durationSeconds = elapsed,
+                    onDone = {
+                        completedExercises = emptySet()
+                        totalElapsed = 0
+                        phase = WorkoutPhase.Read
+                    }
+                )
+            }
         }
-        is WorkoutPhase.Summary -> {
-            val elapsed = (phase as WorkoutPhase.Summary).durationSeconds
-            WorkoutSummaryScreen(
-                modifier = modifier,
-                workout = todayWorkoutData,
-                durationSeconds = elapsed,
-                onDone = {
-                    completedExercises = emptySet()
-                    totalElapsed = 0
-                    phase = WorkoutPhase.Read
-                }
-            )
+
+        showExerciseDetail?.let { name ->
+            ExerciseDetailScreen(exerciseName = name, onDismiss = { showExerciseDetail = null })
         }
     }
 }

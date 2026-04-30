@@ -47,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,7 +67,13 @@ import com.fithero.ui.theme.TextSubtle
 import com.fithero.ui.theme.Warning
 
 @Composable
-fun ProfileSheet(onDismiss: () -> Unit, onSignOut: () -> Unit = {}) {
+fun ProfileSheet(
+    onDismiss: () -> Unit,
+    onSignOut: () -> Unit = {},
+    onPayments: () -> Unit = {},
+    onWorkoutHistory: () -> Unit = {}
+) {
+    val haptic = LocalHapticFeedback.current
     var name by remember { mutableStateOf("Alex Johnson") }
     var age by remember { mutableStateOf("28") }
     var height by remember { mutableStateOf("180") }
@@ -147,6 +155,16 @@ fun ProfileSheet(onDismiss: () -> Unit, onSignOut: () -> Unit = {}) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Account
+            SectionTitle("ACCOUNT")
+            Spacer(modifier = Modifier.height(8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                NavigationRow(icon = Icons.Default.AccountCircle, label = "Payments", onClick = onPayments)
+                NavigationRow(icon = Icons.Default.DateRange, label = "Workout History", onClick = onWorkoutHistory)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Notifications
             SectionTitle("NOTIFICATIONS")
             Spacer(modifier = Modifier.height(8.dp))
@@ -174,7 +192,10 @@ fun ProfileSheet(onDismiss: () -> Unit, onSignOut: () -> Unit = {}) {
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
                     .background(Surface)
-                    .clickable { onSignOut() }
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSignOut()
+                    }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -278,6 +299,32 @@ private fun ToggleRow(
                 uncheckedTrackColor = Surface2
             )
         )
+    }
+}
+
+@Composable
+private fun NavigationRow(icon: ImageVector, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Surface)
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Primary.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = Primary, modifier = Modifier.size(16.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Text, modifier = Modifier.weight(1f))
+        Text("›", fontSize = 18.sp, color = TextSubtle)
     }
 }
 

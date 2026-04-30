@@ -15,9 +15,30 @@
 - **Notes:** Anything the other agent needs to know
 ```
 
+### 2026-04-28 — [android] Trainer Library full parity: ExerciseList, WorkoutList, WorkoutDetail, EditWorkout, NewWorkout, NewExercise, ExercisePicker
+- **Screens:** Trainer Library (T-M-08), Workout Detail (T-M-09), Edit Workout (T-M-10), New Workout (T-M-11), New Exercise (T-M-12)
+- **iOS Change:** iOS had `ExerciseListView.swift`, `WorkoutListView.swift`, `WorkoutDetailView.swift`, `EditWorkoutSheet.swift`, `NewWorkoutSheet.swift`, `NewExerciseSheet.swift`, `ExercisePickerSheet.swift` as part of the trainer library/workout editing flow. Android `TrainerLibraryScreen.kt` was a stub (two tabs with static rows, no interactivity).
+- **Android Status:** ✅ Cloned
+- **Files touched:**
+  - `android/.../TrainerLibraryScreen.kt` — Complete rewrite. Exercises tab: search bar, category filter pills (All/Push/Pull/Legs/Core/Mobility/Cardio), exercise rows with category-colored badges, empty state, FAB → NewExerciseSheet. Workouts tab: search bar, rich workout cards with stat pills (exercise count, duration) + exercise preview chips, overflow menu per card (View Details, Edit, Duplicate, Delete), FAB → NewWorkoutSheet. Tap exercise → ExerciseDetailScreen overlay. Tap workout card (or View Details) → WorkoutDetailScreen overlay.
+  - `android/.../WorkoutDetailScreen.kt` — New. Header card with dumbbell icon, workout name, category badge, exercise count + duration stats. Exercise list with numbered badges, sets×reps, rest time, chevron. Tap exercise → ExerciseDetailScreen.
+  - `android/.../EditWorkoutSheet.kt` — New. Top bar with Cancel/Save (gated by `hasChanges`). Name, category, duration input fields. Exercise list with up/down reorder arrows, drag handle (☰), delete button per row. Add Exercise button → ExercisePickerSheet overlay.
+  - `android/.../NewWorkoutSheet.kt` — New. Name, category, duration fields. Empty state with "Add exercises from library" CTA, or populated list with exercise rows. Internal ExercisePickerSheet for multi-select. Create Workout button appends to library.
+  - `android/.../NewExerciseSheet.kt` — New. Name field, category pill selector, sets/reps/rest row, notes field. Create Exercise button.
+  - `android/.../ExercisePickerSheet.kt` — New. Search bar, exercise list with selection checkboxes (✅/empty circle), selected-state highlighting (primary tint + border), info button per row → ExerciseDetailScreen preview.
+  - `android/.../TrainerModels.kt` — New. `Exercise` and `Workout` data classes mirroring iOS `FHModels.swift`. 16 sample exercises across 6 categories. 5 sample workouts with exercise references.
+- **Notes:** All overlays use nullable-state `Box`/`if` pattern (no Navigation component in project). Duplicate creates a copy with " Copy" suffix and new UUID. Delete removes immediately (no confirmation — matches iOS menu behavior). Category colors: Push=teal, Pull=lime, Legs=orange, Core=green, Mobility=muted, Cardio=red.
+
 ---
 
 ## Log
+
+### 2026-04-27 — [android] Auth Foundation (P0)
+- **Screen:** Client Auth (C-M-01), Trainer Auth (T-M-01), Forgot Password (C-M-16)
+- **iOS Change:** Auth flow rebuilt with `AuthLandingView`, `AuthSignInView`, `AuthSignUpOptionsView`, `ClientAuthView`, `TrainerAuthView`, `ForgotPasswordSheet`. `AppRootView` now routes through auth when no role is stored. Debug bypass pills included.
+- **Android Status:** ✅ Cloned
+- **Files touched:** `ios/.../AuthLandingView.swift`, `AuthSignInView.swift`, `AuthSignUpOptionsView.swift`, `ClientAuthView.swift`, `TrainerAuthView.swift`, `ForgotPasswordSheet.swift`, `SSOButtons.swift` → `android/.../AuthLandingScreen.kt`, `AuthSignInScreen.kt`, `AuthSignUpOptionsScreen.kt`, `ClientAuthScreen.kt`, `TrainerAuthScreen.kt`, `ForgotPasswordSheet.kt`, `SSOButtons.kt`, `FitHeroApp.kt`
+- **Notes:** Android uses state-based auth navigation (no Navigation component in project). SSO buttons are stubs. `hasCompletedOnboarding` wired but onboarding screen itself is P1. Sign Out from Profile/Settings now returns to auth landing.
 
 ### 2026-04-28 — [ios] Polish: Chat full-screen, Calendar Settings link, DatePicker fix, Photos week folders
 - **Screen:** Cross-cutting polish pass
@@ -183,6 +204,7 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-04-27 | Remove "Sign in with Apple" on Android | Sign in with Apple has no native Android SDK and is not standard UX on Android. Google Sign-In + email/password kept. Human approved. |
 | 2026-04-21 | Remove floating role badge | Too high, collided with back nav / Dynamic Island. Sign Out moved to Profile/Settings. |
 | 2026-04-21 | Android charts use Canvas | No external chart dependency. Custom Canvas line chart matches iOS visual. |
 
@@ -247,3 +269,63 @@
 - `ios/fithero/Trainer/Auth/TrainerAuthView.swift`
 - `ios/fithero/Shared/App/AuthSignInView.swift`
 - `docs/SCREEN_STATUS.md`
+
+
+### 2026-04-27 — [android] 6 Missing Screens Built: Exercise Detail, Workout History, Payments, Add Payment, Add Measurement, Onboarding
+- **Screens:** C-M-02 (Onboarding), C-M-03 (Add Payment), C-M-11 (Payments), C-M-13 (Exercise Detail), C-M-14 (Workout History), C-M-15 (Add Measurement)
+- **iOS Change:** All 6 screens existed on iOS. Android was missing them entirely.
+- **Android Status:** ✅ Cloned
+- **Files touched:**
+  - `android/.../ClientOnboardingScreen.kt` — 7-step onboarding: Welcome, Goals (multi-select chips), Experience (single-select cards), Frequency, Workout Types, Equipment, Profile Bio. Animated step transitions. Wired in `FitHeroApp.kt` when `hasCompletedOnboarding=false`.
+  - `android/.../ExerciseDetailScreen.kt` — Two-tab screen: Overview (instructions, muscle groups, equipment, notes) + History (dated set logs). Sample data for Bench Press and Back Squat.
+  - `android/.../WorkoutHistoryScreen.kt` — Completed workout list with date, duration, exercise count, RPE, notes. Reached from Profile → Workout History.
+  - `android/.../PaymentsScreen.kt` — Active plan card, payment methods list, payment history with status badges (Paid/Pending/Failed colors). Add Payment button opens sheet.
+  - `android/.../AddPaymentMethodSheet.kt` — Card number, MM/YY, CVC form. Auto-detects brand (Visa/Mastercard/Amex) from first digit. Adds to mutable payment methods list.
+  - `android/.../AddMeasurementSheet.kt` — Form sheet with 9 fields: weight, body fat, chest, waist, hips, left/right arm, left/right thigh. Reached from Progress → Body tab → + Add Measurement.
+  - `android/.../ProfileSheet.kt` — Added "Account" section with Payments and Workout History navigation rows.
+  - `android/.../ProgressScreen.kt` — Added + Add Measurement button in Body tab. PRs tab exercises are now tappable → ExerciseDetail overlay.
+  - `android/.../WorkoutScreen.kt` / `WorkoutReadScreen.kt` — Added ℹ info icon on each exercise row → ExerciseDetail overlay.
+  - `android/.../HomeScreen.kt` — Wired Payments and Workout History overlays from ProfileSheet.
+  - `android/.../FitHeroApp.kt` — Wired `ClientOnboardingScreen` when `hasCompletedOnboarding=false`.
+- **Notes:** All screens use Volt dark theme (Bg #0B0D10, Primary #C6FF3D, Surface #14181D). No external dependencies. Build passes with only deprecation warnings (deprecated icons). ExerciseDetail uses `HistorySetEntry` to avoid name conflict with `SetEntry` in `ActiveWorkoutScreen.kt`.
+
+
+### 2026-04-27 — [android] Check-Ins tab + Photo picker parity
+- **Screens:** C-M-08 (Progress — Check-Ins tab), C-M-10 (Messages — photo picker)
+- **iOS Change:** Check-Ins tab existed on iOS with week comparison, weight/measurement/photos cards, and Submit CTA. Messages had PhotosPicker attachment.
+- **Android Status:** ✅ Cloned
+- **Files touched:**
+  - `android/.../ProgressScreen.kt` — Added 5th tab "Check-Ins" with Previous/Current week header, weight comparison (with ▼ delta), 7 measurement rows (chest/waist/hips/arms/thighs) with improvement arrows, photo placeholders, and "Submit Check-In" button with confirmation dialog.
+  - `android/.../MessagesScreen.kt` — Photo attach button now launches `ActivityResultContracts.GetContent("image/*")`. Picked photo appends a 📷 Photo message bubble to the chat.
+- **Notes:** Build is now clean (zero warnings). All 16 client mobile screens are ✅ on Android.
+
+
+### 2026-04-27 — [android] Trainer Today parity: state-driven sessions, complete/cancel actions, empty state, mark-all (T-M-02)
+- **Screen:** Trainer Today (T-M-02)
+- **iOS Change:** Rewrote with state-driven `TodaySession` model. Swipe actions (Complete, Reschedule, Cancel). Completed sessions in collapsible sub-section with undo. Empty state. Mark-all-complete with confirmation. Dynamic stats.
+- **Android Status:** ✅ Cloned (adapted)
+- **Files touched:** `android/.../TrainerTodayScreen.kt`
+- **Notes:** Android uses tap-to-reveal action buttons instead of swipe actions (Compose swipe without external libs is complex). Complete/Cancel buttons appear below tapped row. Undo available on completed sessions. "Remaining" stat updates dynamically. Mark-all-complete shows confirmation overlay. Empty state shows "All caught up!" with checkmark icon when no pending sessions.
+
+
+### 2026-04-27 — [android] Messages video call alert + Photos week folders parity
+- **Screens:** C-M-10 (Messages — video call), C-M-08 (Progress — Photos tab)
+- **iOS Change:** Messages video call button shows "coming soon" alert. Photos tab reorganized into week-grouped card sections with "+ Add" pill button.
+- **Android Status:** ✅ Cloned
+- **Files touched:**
+  - `android/.../MessagesScreen.kt` — Video call icon in chat header is now clickable. Tapping it shows a dialog: "Video calls are coming soon. Stay tuned!"
+  - `android/.../ProgressScreen.kt` — Photos tab rewritten with week-grouped sections. Each week is a card with week label, date range, photo count header, and 3-column grid. "+ Add" pill button in top-right of each section header. Removed old Start/Current placeholder row.
+- **Notes:** Build remains clean (1 unused parameter warning in SimpleLineChart). All client mobile screens now at parity with iOS.
+
+
+### 2026-04-27 — [android] Haptics parity across key interactions
+- **Screen:** Cross-cutting (Messages, Workout, Trainer Today, Profile, Schedule)
+- **iOS Change:** Added `FHHaptics.swift` with light/medium/heavy/success/error/selection feedback. Applied to message send, set complete, workout start, profile toggles, sign out, Today swipe complete, photo tap, RPE pills, etc.
+- **Android Status:** ✅ Cloned (adapted)
+- **Files touched:**
+  - `android/.../MessagesScreen.kt` — Haptic on send, photo attach, video call button tap
+  - `android/.../WorkoutReadScreen.kt` — Haptic on Start/Continue workout button
+  - `android/.../TrainerTodayScreen.kt` — Haptic on Complete, Cancel, and Mark-all-complete actions
+  - `android/.../ProfileSheet.kt` — Haptic on Sign Out
+  - `android/.../ScheduleScreen.kt` — Haptic on Add to Calendar
+- **Notes:** Android uses `LocalHapticFeedback.current` with `HapticFeedbackType.LongPress` for medium-weight feedback. Compose handles this consistently across supported devices.

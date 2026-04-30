@@ -28,6 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +50,8 @@ internal fun WorkoutReadScreen(
     workout: WorkoutData,
     completedExercises: Set<Int>,
     onSelectExercise: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onExerciseDetail: (String) -> Unit = {}
 ) {
     val doneCount = completedExercises.size
     val totalCount = workout.exercises.size
@@ -119,7 +122,7 @@ internal fun WorkoutReadScreen(
             workout.exercises.forEachIndexed { index, exercise ->
                 val isDone = completedExercises.contains(index)
                 val isNext = nextIndex == index
-                ExerciseRow(exercise, index, isDone, isNext, onSelectExercise)
+                ExerciseRow(exercise, index, isDone, isNext, onSelectExercise, onExerciseDetail)
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -141,11 +144,15 @@ internal fun WorkoutReadScreen(
                         Text(nextName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Text, maxLines = 1)
                         Text(if (doneCount == 0) "Start first exercise" else "${totalCount - doneCount} remaining", fontSize = 12.sp, color = TextMuted)
                     }
+                    val haptic = LocalHapticFeedback.current
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
                             .background(Primary)
-                            .clickable { nextIndex?.let { onSelectExercise(it) } }
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                nextIndex?.let { onSelectExercise(it) }
+                            }
                             .padding(horizontal = 22.dp, vertical = 12.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -179,7 +186,8 @@ private fun ExerciseRow(
     index: Int,
     isDone: Boolean,
     isNext: Boolean,
-    onSelectExercise: (Int) -> Unit
+    onSelectExercise: (Int) -> Unit,
+    onExerciseDetail: (String) -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -237,18 +245,29 @@ private fun ExerciseRow(
             )
         }
 
-        when {
-            isDone -> Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Success.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                Text("Done", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Success)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Surface2)
+                    .clickable { onExerciseDetail(exercise.name) }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("ℹ", fontSize = 12.sp, color = TextMuted)
             }
-            isNext -> Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Primary).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Next", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PrimaryInk)
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text("→", fontSize = 10.sp, color = PrimaryInk)
+            when {
+                isDone -> Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Success.copy(alpha = 0.1f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                    Text("Done", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Success)
                 }
+                isNext -> Box(modifier = Modifier.clip(RoundedCornerShape(999.dp)).background(Primary).padding(horizontal = 10.dp, vertical = 4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Next", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = PrimaryInk)
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text("→", fontSize = 10.sp, color = PrimaryInk)
+                    }
+                }
+                else -> Text("›", fontSize = 18.sp, color = TextSubtle)
             }
-            else -> Text("›", fontSize = 18.sp, color = TextSubtle)
         }
     }
 }
